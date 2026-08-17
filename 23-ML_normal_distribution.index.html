@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Normal Distribution · Gaussian</title>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js">
+    </script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(160deg, #0b0e1a 0%, #141b2b 50%, #0b0e1a 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            padding: 2rem 1.5rem;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* ambient glow */
+        body::before {
+            content: '';
+            position: absolute;
+            top: -30%;
+            left: -20%;
+            width: 60%;
+            height: 60%;
+            background: radial-gradient(ellipse, rgba(100, 180, 255, 0.04) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        body::after {
+            content: '';
+            position: absolute;
+            bottom: -30%;
+            right: -20%;
+            width: 60%;
+            height: 60%;
+            background: radial-gradient(ellipse, rgba(180, 100, 255, 0.03) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .gaussian-dash {
+            max-width: 1300px;
+            width: 100%;
+            background: rgba(20, 28, 45, 0.85);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border-radius: 48px;
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.02), inset 0 1px 0 rgba(255, 255, 255, 0.02);
+            padding: 2.8rem 3rem 3.2rem;
+            border: 1px solid rgba(255, 255, 255, 0.02);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .gaussian-dash::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80%;
+            height: 80%;
+            background: radial-gradient(ellipse, rgba(100, 180, 255, 0.015) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .gaussian-dash::after {
+            content: '';
+            position: absolute;
+            top: -1px;
+            left: 10%;
+            right: 10%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(100, 180, 255, 0.06), rgba(100, 180, 255, 0.12), rgba(100, 180, 255, 0.06), transparent);
+        }
+
+        /* header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 2.2rem;
+            padding-bottom: 1.2rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+            position: relative;
+            z-index: 1;
+        }
+
+        .title-block {
+            display: flex;
+            flex-direction: column;
+            gap: 0.3rem;
+        }
+
+        .title-block h1 {
+            font-size: 2.2rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            background: linear-gradient(135deg, #b8d4ff 0%, #8ab4f8 40%, #6a9ae8 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .title-block h1 .badge {
+            font-size: 0.6rem;
+            font-weight: 500;
+            background: rgba(100, 180, 255, 0.04);
+            color: rgba(100, 180, 255, 0.5);
+            padding: 0.15rem 0.8rem;
+            border-radius: 30px;
+            letter-spacing: 0.5px;
+            border: 1px solid rgba(100, 180, 255, 0.04);
+        }
+
+        .title-block .subtitle {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px 16px;
+            color: rgba(255, 255, 255, 0.2);
+            font-weight: 400;
+            font-size: 0.8rem;
+        }
+
+        .title-block .subtitle span {
+            background: rgba(255, 255, 255, 0.02);
+            padding: 0.2rem 0.8rem;
+            border-radius: 30px;
+            font-size: 0.7rem;
+            border: 1px solid rgba(255, 255, 255, 0.02);
+            color: rgba(255, 255, 255, 0.25);
+        }
+
+        .title-block .subtitle span i {
+            opacity: 0.3;
+            margin-right: 4px;
+        }
+
+        .badge-set {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            background: rgba(255, 255, 255, 0.02);
+            padding: 0.3rem 1.2rem;
+            border-radius: 50px;
+            border: 1px solid rgba(255, 255, 255, 0.02);
+            flex-wrap: wrap;
+        }
+
+        .badge-set .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.7rem;
+            color: rgba(255, 255, 255, 0.2);
+        }
+
+        .badge-set .stat-item .num {
+            color: rgba(100, 180, 255, 0.4);
+            font-weight: 600;
+            font-size: 0.8rem;
+        }
+
+        .badge-set .stat-item i {
+            opacity: 0.2;
+        }
+
+        /* main layout - asymmetrical */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* left card - main result */
+        .result-card {
+            background: rgba(255, 255, 255, 0.02);
+            backdrop-filter: blur(4px);
+            border-radius: 28px;
+            padding: 2.2rem 2.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.02);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .result-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 28px rgba(0, 0, 0, 0.15);
+        }
+
+        .result-card .label {
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.2);
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .result-card .label i {
+            opacity: 0.2;
+        }
+
+        .result-card .value {
+            font-size: 3.8rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #b8d4ff 0%, #8ab4f8 40%, #6a9ae8 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            letter-spacing: -0.02em;
+            line-height: 1.1;
+        }
+
+        .result-card .value .suffix {
+            font-size: 1.4rem;
+            color: rgba(255, 255, 255, 0.1);
+            font-weight: 400;
+            margin-left: 4px;
+        }
+
+        .result-card .formula {
+            margin-top: 0.8rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.15);
+            background: rgba(255, 255, 255, 0.02);
+            padding: 0.5rem 1rem;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.02);
+        }
+
+        .result-card .formula .highlight {
+            color: rgba(100, 180, 255, 0.4);
+            font-weight: 600;
+        }
+
+        .result-card .formula .pct {
+            color: rgba(180, 100, 255, 0.3);
+            font-weight: 600;
+        }
+
+        .result-card .stats-row {
+            display: flex;
+            gap: 2rem;
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.02);
+        }
+
+        .result-card .stats-row .stat {
+            text-align: center;
+        }
+
+        .result-card .stats-row .stat .num {
+            font-size: 1.6rem;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        .result-card .stats-row .stat .lbl {
+            font-size: 0.6rem;
+            color: rgba(255, 255, 255, 0.1);
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            margin-top: 0.1rem;
+        }
+
+        .result-card .stats-row .stat .num.gold {
+            color: rgba(100, 180, 255, 0.4);
+        }
+
+        /* right card - data preview */
+        .data-card {
+            background: rgba(255, 255, 255, 0.02);
+            backdrop-filter: blur(4px);
+            border-radius: 28px;
+            padding: 2rem 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.02);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .data-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+        }
+
+        .data-card .label {
+            font-size: 0.7rem;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.15);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .data-card .label i {
+            opacity: 0.2;
+        }
+
+        .data-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.5rem;
+        }
+
+        .data-grid .data-item {
+            background: rgba(255, 255, 255, 0.02);
+            padding: 0.6rem 0.5rem;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.02);
+            text-align: center;
+            transition: 0.2s;
+        }
+
+        .data-grid .data-item:hover {
+            background: rgba(255, 255, 255, 0.04);
+        }
+
+        .data-grid .data-item .idx {
+            font-size: 0.5rem;
+            color: rgba(255, 255, 255, 0.08);
+            display: block;
+        }
+
+        .data-grid .data-item .val {
+            font-size: 1rem;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.3);
+            font-family: 'Courier New', monospace;
+        }
+
+        .data-grid .data-item.highlight .val {
+            color: rgba(100, 180, 255, 0.4);
+        }
+
+        /* chart */
+        .chart-wrapper {
+            background: rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(4px);
+            border-radius: 28px;
+            padding: 1.8rem 1.8rem 1.2rem;
+            border: 1px solid rgba(255, 255, 255, 0.02);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .chart-wrapper .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 0.8rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+            margin-bottom: 1rem;
+        }
+
+        .chart-wrapper .chart-header .label {
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.15);
+            font-size: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .chart-wrapper .chart-header .label i {
+            opacity: 0.2;
+        }
+
+        .chart-wrapper .chart-header .meta {
+            font-size: 0.6rem;
+            color: rgba(255, 255, 255, 0.05);
+        }
+
+        .chart-wrapper canvas {
+            width: 100% !important;
+            max-height: 250px;
+            height: 230px !important;
+        }
+
+        /* footer */
+        .footer-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.8rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .footer-card {
+            background: rgba(255, 255, 255, 0.02);
+            backdrop-filter: blur(2px);
+            border-radius: 16px;
+            padding: 0.8rem 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.02);
+            text-align: center;
+            transition: 0.2s;
+        }
+
+        .footer-card:hover {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .footer-card .num {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.3);
+        }
+
+        .footer-card .lbl {
+            font-size: 0.55rem;
+            color: rgba(255, 255, 255, 0.08);
+            margin-top: 0.1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .footer-card .num.highlight {
+            color: rgba(100, 180, 255, 0.3);
+        }
+
+        @media (max-width: 1024px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+            .data-grid {
+                grid-template-columns: repeat(5, 1fr);
+            }
+            .footer-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 750px) {
+            .gaussian-dash {
+                padding: 1.5rem;
+            }
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.6rem;
+            }
+            .title-block h1 {
+                font-size: 1.6rem;
+                flex-wrap: wrap;
+            }
+            .result-card .value {
+                font-size: 2.8rem;
+            }
+            .result-card .value .suffix {
+                font-size: 1.2rem;
+            }
+            .result-card .stats-row {
+                flex-wrap: wrap;
+                gap: 1rem;
+            }
+            .data-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            .footer-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .data-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            .footer-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+            .result-card {
+                padding: 1.5rem;
+            }
+            .data-card {
+                padding: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="gaussian-dash">
+
+        <!-- header -->
+        <div class="header">
+            <div class="title-block">
+                <h1>
+                    <i class="fas fa-bell" style="font-size: 1.6rem; opacity: 0.15;"></i>
+                    Normal Distribution
+                    <span class="badge">gaussian</span>
+                </h1>
+                <div class="subtitle">
+                    <span><i class="fas fa-cube"></i> numpy.random.normal()</span>
+                    <span><i class="fas fa-hashtag"></i> n = 9</span>
+                    <span><i class="fas fa-arrow-right"></i> μ = 5.0</span>
+                    <span><i class="fas fa-arrow-right"></i> σ = 1.0</span>
+                </div>
+            </div>
+            <div class="badge-set">
+                <div class="stat-item">
+                    <i class="fas fa-microchip"></i>
+                    <span>numpy: <span class="num">1.26.4</span></span>
+                </div>
+                <div class="stat-item">
+                    <i class="fas fa-terminal"></i>
+                    <span>method: <span class="num">hist()</span></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- main grid -->
+        <div class="main-grid">
+            <!-- left: main result -->
+            <div class="result-card">
+                <div class="label">
+                    <i class="fas fa-chart-simple"></i> Distribution Parameters
+                </div>
+                <div class="value">
+                    5.0<span class="suffix">mean</span>
+                </div>
+                <div class="formula">
+                    X ~ N(μ, σ²) = <span class="highlight">N(5.0, 1.0)</span>
+                </div>
+                <div class="stats-row">
+                    <div class="stat">
+                        <div class="num gold">5.0</div>
+                        <div class="lbl">Mean (μ)</div>
+                    </div>
+                    <div class="stat">
+                        <div class="num">1.0</div>
+                        <div class="lbl">Std Dev (σ)</div>
+                    </div>
+                    <div class="stat">
+                        <div class="num">9</div>
+                        <div class="lbl">Sample Size</div>
+                    </div>
+                    <div class="stat">
+                        <div class="num">100</div>
+                        <div class="lbl">Bins</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- right: data preview -->
+            <div class="data-card">
+                <div class="label">
+                    <i class="fas fa-database"></i> Sample Data (first 9)
+                </div>
+                <div class="data-grid">
+                    <div class="data-item"><span class="idx">x₁</span><span class="val">1</span></div>
+                    <div class="data-item"><span class="idx">x₂</span><span class="val">2</span></div>
+                    <div class="data-item"><span class="idx">x₃</span><span class="val">3</span></div>
+                    <div class="data-item highlight"><span class="idx">x₄</span><span class="val">4</span></div>
+                    <div class="data-item highlight"><span class="idx">x₅</span><span class="val">5</span></div>
+                    <div class="data-item highlight"><span class="idx">x₆</span><span class="val">6</span></div>
+                    <div class="data-item"><span class="idx">x₇</span><span class="val">7</span></div>
+                    <div class="data-item"><span class="idx">x₈</span><span class="val">8</span></div>
+                    <div class="data-item"><span class="idx">x₉</span><span class="val">9</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- chart -->
+        <div class="chart-wrapper">
+            <div class="chart-header">
+                <span class="label">
+                    <i class="fas fa-chart-bar"></i> Frequency Distribution
+                </span>
+                <span class="meta">100 bins</span>
+            </div>
+            <canvas id="distributionChart"></canvas>
+        </div>
+
+        <!-- footer -->
+        <div class="footer-grid">
+            <div class="footer-card">
+                <div class="num">5.0</div>
+                <div class="lbl">Mean</div>
+            </div>
+            <div class="footer-card">
+                <div class="num">1.0</div>
+                <div class="lbl">Std Deviation</div>
+            </div>
+            <div class="footer-card">
+                <div class="num highlight">100k</div>
+                <div class="lbl">Generated Samples</div>
+            </div>
+            <div class="footer-card">
+                <div class="num">100</div>
+                <div class="lbl">Histogram Bins</div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        (function() {
+            // ----- data -----
+            const data = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+            const mean = 5.0;
+            const stdDev = 1.0;
+
+            // Generate histogram data (simulate normal distribution with 100 bins)
+            // For visualization, we'll create a smoothed distribution centered at 5
+            const bins = 100;
+            const minVal = 0;
+            const maxVal = 10;
+            const binWidth = (maxVal - minVal) / bins;
+
+            // Generate histogram data using gaussian-like distribution
+            const histData = [];
+            const labels = [];
+
+            for (let i = 0; i < bins; i++) {
+                const binCenter = minVal + (i + 0.5) * binWidth;
+                labels.push(binCenter.toFixed(1));
+
+                // Gaussian density function
+                const z = (binCenter - mean) / stdDev;
+                const density = (1 / (stdDev * Math.sqrt(2 * Math.PI))) * Math.exp(-0.5 * z * z);
+                // Scale for visualization (area under curve ≈ 1)
+                const frequency = density * binWidth * 1000 + 2;
+                histData.push(frequency);
+            }
+
+            // ----- chart -----
+            const ctx = document.getElementById('distributionChart').getContext('2d');
+
+            // Mean line plugin
+            const meanLinePlugin = {
+                id: 'meanLine',
+                afterDraw: function(chart) {
+                    const ctx = chart.ctx;
+                    const xScale = chart.scales.x;
+                    const yScale = chart.scales.y;
+
+                    if (!xScale || !yScale) return;
+
+                    const meanPos = xScale.getPixelForValue(5.0);
+
+                    ctx.save();
+
+                    // Mean line
+                    ctx.setLineDash([5, 5]);
+                    ctx.strokeStyle = 'rgba(100, 180, 255, 0.15)';
+                    ctx.lineWidth = 1.5;
+
+                    ctx.beginPath();
+                    ctx.moveTo(meanPos, yScale.top);
+                    ctx.lineTo(meanPos, yScale.bottom);
+                    ctx.stroke();
+
+                    // Label
+                    ctx.setLineDash([]);
+                    ctx.fillStyle = 'rgba(100, 180, 255, 0.1)';
+                    ctx.font = '9px Inter, sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('μ = 5.0', meanPos, yScale.top - 6);
+
+                    ctx.restore();
+                }
+            };
+
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Frequency',
+                        data: histData,
+                        backgroundColor: 'rgba(100, 180, 255, 0.06)',
+                        borderColor: 'rgba(100, 180, 255, 0.08)',
+                        borderWidth: 0.5,
+                        borderRadius: 2,
+                        barPercentage: 1.0,
+                        categoryPercentage: 1.0,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(20, 28, 45, 0.9)',
+                            titleColor: 'rgba(255,255,255,0.4)',
+                            bodyColor: 'rgba(255,255,255,0.2)',
+                            cornerRadius: 12,
+                            padding: 10,
+                            borderColor: 'rgba(255,255,255,0.02)',
+                            borderWidth: 1,
+                            callbacks: {
+                                label: (ctx) => {
+                                    return `Frequency: ${ctx.parsed.y.toFixed(0)}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: {
+                                color: 'rgba(255,255,255,0.05)',
+                                font: { size: 7, weight: '400' },
+                                maxTicksLimit: 20,
+                            },
+                            title: {
+                                display: true,
+                                text: 'Value',
+                                color: 'rgba(255,255,255,0.04)',
+                                font: { size: 9, weight: '400' }
+                            }
+                        },
+                        y: {
+                            grid: {
+                                display: true,
+                                color: 'rgba(255,255,255,0.01)',
+                                drawBorder: false,
+                            },
+                            ticks: {
+                                color: 'rgba(255,255,255,0.04)',
+                                font: { size: 8 },
+                                stepSize: 50,
+                            },
+                            title: {
+                                display: true,
+                                text: 'Frequency',
+                                color: 'rgba(255,255,255,0.04)',
+                                font: { size: 9, weight: '400' }
+                            }
+                        }
+                    },
+                    layout: {
+                        padding: { top: 18, bottom: 8, left: 8, right: 8 }
+                    }
+                },
+                plugins: [meanLinePlugin]
+            });
+
+        })();
+    </script>
+</body>
+</html>
