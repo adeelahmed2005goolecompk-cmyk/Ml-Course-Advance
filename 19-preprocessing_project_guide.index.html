@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Data Preprocessing · Dashboard</title>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js">
+    </script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(145deg, #f0f4f8 0%, #e2eaf1 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            padding: 2rem 1.5rem;
+        }
+
+        .prep-dash {
+            max-width: 1400px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-radius: 48px;
+            box-shadow: 0 30px 80px rgba(20, 40, 80, 0.08), 0 12px 30px rgba(0,0,0,0.02), inset 0 1px 2px rgba(255,255,255,0.8);
+            padding: 2.8rem 3rem 3.2rem;
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            position: relative;
+            z-index: 1;
+        }
+
+        .prep-dash::after {
+            content: '';
+            position: absolute;
+            top: -1px;
+            left: 15%;
+            right: 15%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(40, 100, 180, 0.15), rgba(40, 100, 180, 0.3), rgba(40, 100, 180, 0.15), transparent);
+            filter: blur(1px);
+        }
+
+        /* header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 2rem;
+            padding-bottom: 1.2rem;
+            border-bottom: 2px solid rgba(40, 80, 140, 0.04);
+        }
+
+        .title-block {
+            display: flex;
+            flex-direction: column;
+            gap: 0.3rem;
+        }
+
+        .title-block h1 {
+            font-size: 2.2rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            background: linear-gradient(135deg, #1a3a5c, #2d6b8a);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .title-block h1 .prep-badge {
+            font-size: 0.65rem;
+            font-weight: 600;
+            background: linear-gradient(135deg, #2d6b8a, #1a3a5c);
+            color: #fff;
+            padding: 0.15rem 1rem;
+            border-radius: 40px;
+            letter-spacing: 0.5px;
+            text-shadow: none;
+            box-shadow: 0 0 20px rgba(40, 100, 180, 0.1);
+        }
+
+        .subtitle {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px 20px;
+            color: rgba(40, 60, 100, 0.5);
+            font-weight: 400;
+            font-size: 0.9rem;
+        }
+
+        .subtitle span {
+            background: rgba(40, 80, 140, 0.04);
+            padding: 0.2rem 1rem;
+            border-radius: 40px;
+            font-size: 0.8rem;
+            border: 1px solid rgba(40, 80, 140, 0.04);
+            color: rgba(40, 60, 100, 0.6);
+        }
+
+        .subtitle span i {
+            color: #2d6b8a;
+            opacity: 0.5;
+            margin-right: 4px;
+        }
+
+        .badge-set {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            background: rgba(40, 80, 140, 0.02);
+            padding: 0.3rem 1.5rem;
+            border-radius: 60px;
+            border: 1px solid rgba(40, 80, 140, 0.04);
+            flex-wrap: wrap;
+        }
+
+        .badge-set .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.8rem;
+            color: rgba(40, 60, 100, 0.6);
+        }
+
+        .badge-set .stat-item .num {
+            color: #1a3a5c;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .badge-set .stat-item i {
+            color: rgba(40, 80, 140, 0.2);
+        }
+
+        /* stats grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.2rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.5);
+            backdrop-filter: blur(4px);
+            border-radius: 20px;
+            padding: 1.2rem 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            box-shadow: 0 4px 12px rgba(20, 40, 80, 0.02);
+            transition: transform 0.2s, box-shadow 0.2s;
+            text-align: center;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(20, 40, 80, 0.04);
+        }
+
+        .stat-card .stat-icon {
+            font-size: 1.8rem;
+            color: #2d6b8a;
+            opacity: 0.3;
+            margin-bottom: 0.3rem;
+        }
+
+        .stat-card .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #1a3a5c;
+        }
+
+        .stat-card .stat-label {
+            font-size: 0.8rem;
+            color: rgba(40, 60, 100, 0.5);
+            margin-top: 0.2rem;
+        }
+
+        /* main content */
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.8rem;
+            margin-bottom: 2rem;
+        }
+
+        .panel {
+            background: rgba(255, 255, 255, 0.5);
+            backdrop-filter: blur(4px);
+            border-radius: 24px;
+            padding: 1.5rem 1.8rem;
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            box-shadow: 0 4px 12px rgba(20, 40, 80, 0.02);
+        }
+
+        .panel-title {
+            font-weight: 600;
+            color: #1a3a5c;
+            font-size: 0.95rem;
+            padding-bottom: 0.8rem;
+            border-bottom: 1px solid rgba(40, 80, 140, 0.04);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .panel-title i {
+            color: #2d6b8a;
+            opacity: 0.3;
+        }
+
+        .panel-title .badge-count {
+            font-size: 0.7rem;
+            font-weight: 400;
+            background: rgba(40, 80, 140, 0.04);
+            padding: 0.1rem 0.8rem;
+            border-radius: 30px;
+            color: rgba(40, 60, 100, 0.5);
+            margin-left: auto;
+        }
+
+        .column-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .column-tag {
+            background: rgba(40, 80, 140, 0.04);
+            padding: 0.3rem 1rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            color: rgba(40, 60, 100, 0.7);
+            border: 1px solid rgba(40, 80, 140, 0.04);
+            font-family: 'Courier New', monospace;
+        }
+
+        .column-tag .type {
+            color: #2d6b8a;
+            font-size: 0.65rem;
+            opacity: 0.6;
+            margin-left: 4px;
+        }
+
+        .data-preview {
+            font-family: 'Courier New', monospace;
+            font-size: 0.8rem;
+            color: rgba(40, 60, 100, 0.7);
+            background: rgba(255, 255, 255, 0.3);
+            padding: 0.8rem 1rem;
+            border-radius: 12px;
+            border: 1px solid rgba(40, 80, 140, 0.04);
+            overflow-x: auto;
+            white-space: pre;
+            line-height: 1.6;
+        }
+
+        .preprocess-steps {
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+        }
+
+        .step-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 0.6rem 1rem;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 14px;
+            border: 1px solid rgba(40, 80, 140, 0.03);
+            transition: 0.2s;
+        }
+
+        .step-item:hover {
+            background: rgba(255, 255, 255, 0.6);
+        }
+
+        .step-item .step-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: rgba(40, 80, 140, 0.04);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #2d6b8a;
+            font-size: 0.9rem;
+            flex-shrink: 0;
+        }
+
+        .step-item .step-content {
+            flex: 1;
+        }
+
+        .step-item .step-title {
+            font-weight: 500;
+            color: #1a3a5c;
+            font-size: 0.85rem;
+        }
+
+        .step-item .step-desc {
+            font-size: 0.75rem;
+            color: rgba(40, 60, 100, 0.5);
+        }
+
+        .step-item .step-status {
+            font-size: 0.7rem;
+            padding: 0.1rem 0.8rem;
+            border-radius: 30px;
+            background: rgba(45, 107, 138, 0.06);
+            color: #2d6b8a;
+        }
+
+        .step-item .step-status.done {
+            background: rgba(45, 180, 100, 0.06);
+            color: #2d8a5c;
+        }
+
+        /* chart wrapper */
+        .chart-wrapper {
+            background: rgba(255, 255, 255, 0.5);
+            backdrop-filter: blur(4px);
+            border-radius: 24px;
+            padding: 1.5rem 1.8rem;
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            box-shadow: 0 4px 12px rgba(20, 40, 80, 0.02);
+            margin-bottom: 2rem;
+        }
+
+        .chart-wrapper .panel-title {
+            border-bottom: 1px solid rgba(40, 80, 140, 0.04);
+            padding-bottom: 0.8rem;
+            margin-bottom: 1rem;
+        }
+
+        .chart-wrapper canvas {
+            width: 100% !important;
+            max-height: 250px;
+            height: 220px !important;
+        }
+
+        @media (max-width: 1024px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 650px) {
+            .prep-dash {
+                padding: 1.5rem;
+            }
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 0.8rem;
+            }
+            .stat-card {
+                padding: 0.8rem 1rem;
+            }
+            .stat-card .stat-number {
+                font-size: 1.5rem;
+            }
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.6rem;
+            }
+            .title-block h1 {
+                font-size: 1.6rem;
+                flex-wrap: wrap;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="prep-dash">
+
+        <!-- header -->
+        <div class="header">
+            <div class="title-block">
+                <h1>
+                    <i class="fas fa-database" style="font-size: 1.8rem; color: #2d6b8a; opacity: 0.3;"></i>
+                    data · preprocessing
+                    <span class="prep-badge">✦ pipeline</span>
+                </h1>
+                <div class="subtitle">
+                    <span><i class="fas fa-arrow-right"></i> data.csv</span>
+                    <span><i class="fas fa-arrow-right"></i> 10 rows</span>
+                    <span><i class="fas fa-arrow-right"></i> preprocessing</span>
+                </div>
+            </div>
+            <div class="badge-set">
+                <div class="stat-item">
+                    <i class="fas fa-layer-group"></i>
+                    <span>shape: <span class="num" id="shapeDisplay">(10, 4)</span></span>
+                </div>
+                <div class="stat-item">
+                    <i class="fas fa-columns"></i>
+                    <span>columns: <span class="num" id="colCount">4</span></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- stats grid -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-table"></i></div>
+                <div class="stat-number" id="rowCount">10</div>
+                <div class="stat-label">Total Rows</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-columns"></i></div>
+                <div class="stat-number" id="colCount2">4</div>
+                <div class="stat-label">Total Columns</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-copy"></i></div>
+                <div class="stat-number" id="duplicateCount">0</div>
+                <div class="stat-label">Duplicate Rows</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
+                <div class="stat-number" id="preprocessCount">3</div>
+                <div class="stat-label">Preprocessing Steps</div>
+            </div>
+        </div>
+
+        <!-- content grid -->
+        <div class="content-grid">
+            <!-- columns panel -->
+            <div class="panel">
+                <div class="panel-title">
+                    <i class="fas fa-list"></i> Columns & Data Types
+                    <span class="badge-count" id="colBadge">4 columns</span>
+                </div>
+                <div class="column-list" id="columnList">
+                    <span class="column-tag">Date <span class="type">(object)</span></span>
+                    <span class="column-tag">Name <span class="type">(object)</span></span>
+                    <span class="column-tag">Product <span class="type">(object)</span></span>
+                    <span class="column-tag">Value <span class="type">(int64)</span></span>
+                </div>
+            </div>
+
+            <!-- data preview panel -->
+            <div class="panel">
+                <div class="panel-title">
+                    <i class="fas fa-eye"></i> Data Preview
+                    <span class="badge-count">first 1 row</span>
+                </div>
+                <div class="data-preview" id="dataPreview">
+                    Date      Name    Product   Value
+                    2024-01-01 Alice   Laptop    1200
+                </div>
+            </div>
+        </div>
+
+        <!-- preprocessing steps -->
+        <div class="content-grid">
+            <div class="panel">
+                <div class="panel-title">
+                    <i class="fas fa-tasks"></i> Preprocessing Pipeline
+                    <span class="badge-count">3 steps</span>
+                </div>
+                <div class="preprocess-steps">
+                    <div class="step-item">
+                        <div class="step-icon"><i class="fas fa-calendar-alt"></i></div>
+                        <div class="step-content">
+                            <div class="step-title">Convert Date to datetime</div>
+                            <div class="step-desc">pd.to_datetime(df["Date"])</div>
+                        </div>
+                        <span class="step-status done">✓ done</span>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-icon"><i class="fas fa-arrows-alt-h"></i></div>
+                        <div class="step-content">
+                            <div class="step-title">Remove leading/trailing spaces</div>
+                            <div class="step-desc">df["Name"].str.strip()</div>
+                        </div>
+                        <span class="step-status done">✓ done</span>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-icon"><i class="fas fa-arrow-up"></i></div>
+                        <div class="step-content">
+                            <div class="step-title">Convert to uppercase</div>
+                            <div class="step-desc">df["Name"].str.upper()</div>
+                        </div>
+                        <span class="step-status done">✓ done</span>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-icon"><i class="fas fa-search"></i></div>
+                        <div class="step-content">
+                            <div class="step-title">Check for duplicates</div>
+                            <div class="step-desc">df.duplicated().sum()</div>
+                        </div>
+                        <span class="step-status">0 found</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- statistics panel -->
+            <div class="panel">
+                <div class="panel-title">
+                    <i class="fas fa-chart-bar"></i> Descriptive Statistics
+                    <span class="badge-count">summary</span>
+                </div>
+                <div class="data-preview" id="statsPreview" style="font-size: 0.75rem;">
+                    count     10.00
+                    mean     520.00
+                    std      380.00
+                    min      100.00
+                    25%      250.00
+                    50%      500.00
+                    75%      750.00
+                    max      1200.00
+                </div>
+            </div>
+        </div>
+
+        <!-- chart -->
+        <div class="chart-wrapper">
+            <div class="panel-title">
+                <i class="fas fa-chart-pie"></i> Column Data Type Distribution
+                <span class="badge-count">types</span>
+            </div>
+            <canvas id="typeChart"></canvas>
+        </div>
+
+    </div>
+
+    <script>
+        (function() {
+            // ----- simulated data from python script -----
+            const columns = ['Date', 'Name', 'Product', 'Value'];
+            const dtypes = ['object', 'object', 'object', 'int64'];
+            const rowCount = 10;
+            const duplicateCount = 0;
+
+            // update UI
+            document.getElementById('shapeDisplay').textContent = `(${rowCount}, ${columns.length})`;
+            document.getElementById('colCount').textContent = columns.length;
+            document.getElementById('colCount2').textContent = columns.length;
+            document.getElementById('rowCount').textContent = rowCount;
+            document.getElementById('duplicateCount').textContent = duplicateCount;
+            document.getElementById('colBadge').textContent = `${columns.length} columns`;
+
+            // build column tags
+            const colList = document.getElementById('columnList');
+            colList.innerHTML = '';
+            columns.forEach((col, i) => {
+                const tag = document.createElement('span');
+                tag.className = 'column-tag';
+                tag.innerHTML = `${col} <span class="type">(${dtypes[i]})</span>`;
+                colList.appendChild(tag);
+            });
+
+            // ----- chart: data type distribution -----
+            const typeCounts = {};
+            dtypes.forEach(dt => {
+                typeCounts[dt] = (typeCounts[dt] || 0) + 1;
+            });
+
+            const ctx = document.getElementById('typeChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(typeCounts),
+                    datasets: [{
+                        data: Object.values(typeCounts),
+                        backgroundColor: ['#2d6b8a', '#4a8aad', '#6aaac9'],
+                        borderColor: ['#1a3a5c', '#2d6b8a', '#4a8aad'],
+                        borderWidth: 2,
+                        hoverOffset: 8,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '55%',
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: 'rgba(40,60,100,0.7)',
+                                font: { size: 12, weight: '400' },
+                                padding: 15,
+                                usePointStyle: true,
+                                pointStyle: 'circle',
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(255,255,255,0.9)',
+                            titleColor: '#1a3a5c',
+                            bodyColor: 'rgba(40,60,100,0.7)',
+                            cornerRadius: 12,
+                            padding: 10,
+                            borderColor: 'rgba(40,80,140,0.04)',
+                            borderWidth: 1,
+                            callbacks: {
+                                label: (ctx) => {
+                                    const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
+                                    const pct = total > 0 ? ((ctx.parsed / total) * 100).toFixed(1) : 0;
+                                    return `${ctx.label}: ${ctx.parsed} (${pct}%)`;
+                                }
+                            }
+                        }
+                    },
+                    animation: {
+                        animateRotate: true,
+                        duration: 800
+                    }
+                }
+            });
+
+        })();
+    </script>
+</body>
+</html>
