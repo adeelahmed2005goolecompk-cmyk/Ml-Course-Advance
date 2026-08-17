@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bar Chart · interactive</title>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: linear-gradient(145deg, #f3f8fe 0%, #e4eef7 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      padding: 2rem 1.5rem;
+    }
+
+    .bar-dash {
+      max-width: 1200px;
+      width: 100%;
+      background: rgba(255, 255, 255, 0.6);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-radius: 56px;
+      box-shadow: 0 30px 70px rgba(10, 30, 50, 0.10), 0 12px 28px rgba(0,0,0,0.03), inset 0 1px 2px rgba(255,255,255,0.7);
+      padding: 2.6rem 2.6rem 3rem;
+      border: 1px solid rgba(255,255,255,0.4);
+      transition: all 0.2s;
+    }
+
+    /* header */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 2rem;
+      padding-bottom: 1.2rem;
+      border-bottom: 1px solid rgba(40, 80, 120, 0.06);
+    }
+
+    .title-block {
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+    }
+
+    .title-block h1 {
+      font-size: 2.2rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      background: linear-gradient(135deg, #1a3f5c, #2d6b8a);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .title-block h1 small {
+      font-size: 1rem;
+      font-weight: 400;
+      background: rgba(40, 80, 120, 0.08);
+      padding: 0.2rem 1.2rem;
+      border-radius: 40px;
+      color: #1f4a6a;
+      letter-spacing: 0.2px;
+      background-clip: unset;
+      -webkit-background-clip: unset;
+    }
+
+    .subtitle {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 20px;
+      color: #1f4a66;
+      font-weight: 450;
+      font-size: 0.9rem;
+    }
+
+    .subtitle span {
+      background: rgba(40, 80, 120, 0.05);
+      padding: 0.2rem 1rem;
+      border-radius: 40px;
+      font-size: 0.8rem;
+      border: 1px solid rgba(60, 110, 160, 0.04);
+    }
+
+    .badge-set {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      background: rgba(20, 60, 100, 0.03);
+      padding: 0.3rem 1.5rem;
+      border-radius: 60px;
+      border: 1px solid rgba(70, 130, 180, 0.06);
+      flex-wrap: wrap;
+    }
+
+    .badge-set .color-preview {
+      display: flex;
+      width: 40px;
+      height: 20px;
+      border-radius: 6px;
+      background: #00FFFF;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+      border: 1px solid rgba(0,0,0,0.04);
+    }
+
+    /* main chart */
+    .chart-main {
+      background: rgba(255, 255, 255, 0.5);
+      backdrop-filter: blur(4px);
+      border-radius: 32px;
+      padding: 1.8rem 1.5rem 1.2rem 1.5rem;
+      box-shadow: 0 8px 20px rgba(10, 30, 50, 0.03), inset 0 1px 0 rgba(255,255,255,0.7);
+      border: 1px solid rgba(255,255,255,0.5);
+      margin: 1.2rem 0 2rem;
+      transition: transform 0.15s ease;
+    }
+
+    .chart-main:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 18px 30px -8px rgba(20, 50, 80, 0.06);
+    }
+
+    .chart-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 0.2rem 0.6rem 0.2rem;
+      border-bottom: 1px dashed rgba(40, 80, 120, 0.06);
+      margin-bottom: 0.8rem;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .chart-header .label {
+      font-weight: 550;
+      color: #1a405a;
+      font-size: 0.95rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .chart-header .label i {
+      opacity: 0.5;
+      font-size: 0.9rem;
+    }
+
+    .chart-header .bar-tag {
+      font-size: 0.75rem;
+      background: rgba(40, 80, 120, 0.06);
+      padding: 0.2rem 1rem;
+      border-radius: 40px;
+      color: #2b5b78;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .chart-main canvas {
+      width: 100% !important;
+      max-height: 380px;
+      height: 350px !important;
+    }
+
+    /* controls panel */
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(240, 248, 255, 0.4);
+      backdrop-filter: blur(4px);
+      padding: 1.2rem 2rem;
+      border-radius: 60px;
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      gap: 1.2rem;
+    }
+
+    .control-group {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 1.2rem 2rem;
+    }
+
+    .control-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.9rem;
+      font-weight: 450;
+      color: #1e4360;
+    }
+
+    .control-item label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+    }
+
+    .control-item input[type="range"] {
+      width: 100px;
+      height: 4px;
+      -webkit-appearance: none;
+      appearance: none;
+      background: #cbdae6;
+      border-radius: 10px;
+      outline: none;
+      transition: 0.2s;
+    }
+
+    .control-item input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #2a7d9e;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      border: 2px solid white;
+    }
+
+    .control-item input[type="range"]::-moz-range-thumb {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #2a7d9e;
+      cursor: pointer;
+      border: 2px solid white;
+    }
+
+    .control-item .value-display {
+      min-width: 28px;
+      font-weight: 600;
+      color: #1a405a;
+      font-size: 0.85rem;
+    }
+
+    .color-picker-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .color-picker-wrap input[type="color"] {
+      width: 36px;
+      height: 36px;
+      border: 2px solid rgba(255,255,255,0.5);
+      border-radius: 50%;
+      padding: 2px;
+      cursor: pointer;
+      background: transparent;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+
+    .color-picker-wrap input[type="color"]::-webkit-color-swatch-wrapper {
+      padding: 0;
+    }
+
+    .color-picker-wrap input[type="color"]::-webkit-color-swatch {
+      border: none;
+      border-radius: 50%;
+    }
+
+    .orientation-toggle {
+      display: flex;
+      gap: 4px;
+      background: rgba(40, 80, 120, 0.06);
+      padding: 4px;
+      border-radius: 40px;
+      border: 1px solid rgba(60, 110, 160, 0.06);
+    }
+
+    .orientation-toggle button {
+      padding: 0.3rem 1rem;
+      border: none;
+      border-radius: 30px;
+      background: transparent;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: #1e4360;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .orientation-toggle button.active {
+      background: rgba(42, 125, 158, 0.15);
+      color: #1a405a;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+    }
+
+    .orientation-toggle button:hover:not(.active) {
+      background: rgba(40, 80, 120, 0.04);
+    }
+
+    .note-box {
+      font-size: 0.75rem;
+      color: #2d5b78;
+      background: rgba(40, 80, 120, 0.04);
+      padding: 0.2rem 1rem;
+      border-radius: 40px;
+      border: 1px solid rgba(60, 110, 160, 0.04);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .note-box i {
+      opacity: 0.5;
+    }
+
+    @media (max-width: 850px) {
+      .bar-dash { padding: 1.5rem; }
+      .controls { flex-direction: column; align-items: stretch; border-radius: 40px; padding: 1.2rem; }
+      .control-group { justify-content: center; }
+    }
+
+    @media (max-width: 550px) {
+      .header { flex-direction: column; align-items: flex-start; gap: 0.6rem; }
+      .title-block h1 { font-size: 1.6rem; flex-wrap: wrap; }
+    }
+  </style>
+</head>
+<body>
+<div class="bar-dash">
+
+  <!-- header -->
+  <div class="header">
+    <div class="title-block">
+      <h1>
+        <i class="fas fa-chart-bar" style="font-size: 1.8rem; color: #2b6b8a; opacity: 0.6;"></i>
+        bar · matrix
+        <small>vertical</small>
+      </h1>
+      <div class="subtitle">
+        <span><i class="fas fa-arrow-right" style="margin-right: 4px;"></i> value1 (1–10)</span>
+        <span><i class="fas fa-arrow-right" style="margin-right: 4px;"></i> value2 (1..100)</span>
+        <span><i class="fas fa-arrow-right" style="margin-right: 4px;"></i> 10 bars</span>
+      </div>
+    </div>
+    <div class="badge-set">
+      <span style="font-size: 0.85rem; font-weight: 500; color: #1f4d6b;"><i class="far fa-circle"></i> #00FFFF</span>
+      <div class="color-preview" id="colorPreview" style="background: #00FFFF;"></div>
+    </div>
+  </div>
+
+  <!-- main chart -->
+  <div class="chart-main">
+    <div class="chart-header">
+      <span class="label"><i class="fas fa-chart-simple"></i> value1 vs value2 · <span id="orientationLabel">vertical</span></span>
+      <span class="bar-tag">
+        <i class="fas fa-vector-square"></i> width: <span id="widthLabel">0.8</span>
+      </span>
+    </div>
+    <canvas id="barChart"></canvas>
+  </div>
+
+  <!-- controls -->
+  <div class="controls">
+    <div class="control-group">
+      <!-- bar width slider -->
+      <div class="control-item">
+        <i class="fas fa-arrows-left-right"></i>
+        <label>
+          <span>width</span>
+          <input type="range" id="widthSlider" min="0.1" max="1.0" value="0.8" step="0.05">
+        </label>
+        <span class="value-display" id="widthValue">0.80</span>
+      </div>
+
+      <!-- color picker -->
+      <div class="color-picker-wrap">
+        <i class="fas fa-palette"></i>
+        <input type="color" id="colorPicker" value="#00FFFF">
+      </div>
+
+      <!-- orientation toggle -->
+      <div class="orientation-toggle">
+        <button id="verticalBtn" class="active"><i class="fas fa-arrow-up"></i> vertical</button>
+        <button id="horizontalBtn"><i class="fas fa-arrow-right"></i> horizontal</button>
+      </div>
+    </div>
+
+    <div class="note-box">
+      <i class="fas fa-info-circle"></i> 
+      <span>height: 0–1 (horizontal only)</span>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function() {
+    // ----- data from python script -----
+    const value1 = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+    const value2 = [1, 2, 3, 4, 5, 60, 70, 80, 90, 100];
+
+    // ----- chart setup -----
+    const ctx = document.getElementById('barChart').getContext('2d');
+    
+    // state
+    let currentOrientation = 'vertical'; // 'vertical' or 'horizontal'
+    let currentColor = '#00FFFF';
+    let currentWidth = 0.8;
+
+    function buildConfig() {
+      const isHorizontal = currentOrientation === 'horizontal';
+      const config = {
+        type: 'bar',
+        data: {
+          labels: value1.map(v => v.toString()),
+          datasets: [{
+            label: 'value2',
+            data: value2,
+            backgroundColor: currentColor,
+            borderColor: currentColor,
+            borderWidth: 1,
+            borderRadius: 4,
+            barPercentage: currentWidth,
+            categoryPercentage: 0.9,
+          }]
+        },
+        options: {
+          indexAxis: isHorizontal ? 'y' : 'x',
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: 'rgba(20, 40, 60, 0.85)',
+              titleColor: '#e3f0fa',
+              bodyColor: '#cfe2f0',
+              cornerRadius: 16,
+              padding: 12,
+              callbacks: {
+                label: (ctx) => {
+                  const label = ctx.dataset.label || '';
+                  const val = ctx.parsed.x !== undefined ? ctx.parsed.x : ctx.parsed.y;
+                  return `${label}: ${val}`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              grid: { display: false },
+              ticks: { color: '#1d4057', font: { size: 12 } },
+              title: {
+                display: true,
+                text: isHorizontal ? 'value2' : 'value1',
+                color: '#1a405a',
+                font: { size: 13, weight: '500' }
+              }
+            },
+            y: {
+              grid: { display: false },
+              ticks: { color: '#1d4057', font: { size: 12 } },
+              title: {
+                display: true,
+                text: isHorizontal ? 'value1' : 'value2',
+                color: '#1a405a',
+                font: { size: 13, weight: '500' }
+              }
+            }
+          },
+          layout: {
+            padding: { top: 12, bottom: 8, left: 10, right: 15 }
+          }
+        }
+      };
+
+      // if horizontal, we need to swap data mapping (Chart.js handles indexAxis)
+      return config;
+    }
+
+    let chart = new Chart(ctx, buildConfig());
+
+    // ----- update function -----
+    function updateChart() {
+      chart.destroy();
+      chart = new Chart(ctx, buildConfig());
+      
+      // update UI labels
+      document.getElementById('orientationLabel').textContent = currentOrientation;
+      document.getElementById('widthLabel').textContent = currentWidth.toFixed(2);
+      document.getElementById('colorPreview').style.background = currentColor;
+      
+      // update active button
+      document.getElementById('verticalBtn').classList.toggle('active', currentOrientation === 'vertical');
+      document.getElementById('horizontalBtn').classList.toggle('active', currentOrientation === 'horizontal');
+    }
+
+    // ----- controls -----
+    const widthSlider = document.getElementById('widthSlider');
+    const widthValue = document.getElementById('widthValue');
+    const colorPicker = document.getElementById('colorPicker');
+    const verticalBtn = document.getElementById('verticalBtn');
+    const horizontalBtn = document.getElementById('horizontalBtn');
+
+    widthSlider.addEventListener('input', function() {
+      currentWidth = parseFloat(this.value);
+      widthValue.textContent = currentWidth.toFixed(2);
+      updateChart();
+    });
+
+    colorPicker.addEventListener('input', function() {
+      currentColor = this.value;
+      updateChart();
+    });
+
+    verticalBtn.addEventListener('click', function() {
+      if (currentOrientation === 'vertical') return;
+      currentOrientation = 'vertical';
+      updateChart();
+    });
+
+    horizontalBtn.addEventListener('click', function() {
+      if (currentOrientation === 'horizontal') return;
+      currentOrientation = 'horizontal';
+      updateChart();
+    });
+
+    // initial update
+    updateChart();
+
+    // resize handler
+    window.addEventListener('resize', () => { 
+      chart.update(); 
+    });
+
+  })();
+</script>
+</body>
+</html>
