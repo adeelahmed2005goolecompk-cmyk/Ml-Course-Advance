@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Matplotlib Grid · beautiful frontend</title>
+    <!-- Chart.js CDN (lightweight, beautiful charts) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(145deg, #f6f9fc 0%, #e9f2f9 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            padding: 1.5rem;
+        }
+
+        .card {
+            max-width: 1000px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border-radius: 48px;
+            box-shadow: 0 30px 60px rgba(0, 20, 40, 0.15), 0 10px 25px rgba(0, 0, 0, 0.05), inset 0 1px 2px rgba(255, 255, 255, 0.6);
+            padding: 2.5rem 2.5rem 3rem;
+            transition: all 0.2s ease;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+
+        /* header / title area */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            flex-wrap: wrap;
+            margin-bottom: 2.2rem;
+            border-bottom: 2px solid rgba(46, 91, 120, 0.12);
+            padding-bottom: 1.25rem;
+        }
+
+        .header-left {
+            display: flex;
+            flex-direction: column;
+            gap: 0.2rem;
+        }
+
+        .header-left .main-title {
+            font-size: 2.1rem;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            background: linear-gradient(135deg, #1c3f5c, #2b5f7a);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header-left .main-title small {
+            font-size: 1rem;
+            font-weight: 400;
+            color: #3f6a88;
+            background: rgba(60, 110, 150, 0.12);
+            padding: 0.2rem 1rem;
+            border-radius: 40px;
+            letter-spacing: 0.01em;
+            background-clip: unset;
+            -webkit-background-clip: unset;
+            color: #1f4a66;
+        }
+
+        .subhead {
+            color: #2a4d68;
+            font-weight: 450;
+            font-size: 0.95rem;
+            opacity: 0.8;
+            margin-top: 0.1rem;
+            display: flex;
+            gap: 18px;
+            flex-wrap: wrap;
+        }
+
+        .subhead span {
+            background: rgba(40, 80, 110, 0.07);
+            padding: 0.2rem 1rem;
+            border-radius: 30px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #1e405a;
+        }
+
+        .legend-badge {
+            background: rgba(30, 70, 100, 0.06);
+            padding: 0.3rem 1.2rem;
+            border-radius: 60px;
+            font-size: 0.85rem;
+            color: #1d4a66;
+            border: 1px solid rgba(70, 130, 180, 0.15);
+            backdrop-filter: blur(4px);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .legend-badge i {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            background: #2e7d9e;
+            border-radius: 20px;
+            box-shadow: 0 2px 6px rgba(30, 100, 150, 0.2);
+        }
+
+        /* chart wrapper */
+        .chart-wrapper {
+            background: rgba(255, 255, 255, 0.5);
+            backdrop-filter: blur(2px);
+            border-radius: 32px;
+            padding: 1.8rem 1.8rem 1.2rem 1.8rem;
+            box-shadow: inset 0 2px 8px rgba(0,0,0,0.02), 0 10px 20px -8px rgba(20, 50, 80, 0.08);
+            border: 1px solid rgba(255,255,255,0.7);
+            margin-bottom: 2rem;
+        }
+
+        #gridChart {
+            width: 100% !important;
+            max-height: 400px;
+            height: 380px !important;
+        }
+
+        /* grid settings panel — beautiful & minimal */
+        .control-panel {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1.2rem 1.5rem;
+            background: rgba(240, 248, 255, 0.6);
+            backdrop-filter: blur(4px);
+            padding: 1.2rem 2rem;
+            border-radius: 80px;
+            border: 1px solid rgba(255, 255, 255, 0.7);
+            box-shadow: 0 6px 16px rgba(30, 70, 110, 0.04);
+        }
+
+        .grid-toggles {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.8rem 1.6rem;
+        }
+
+        .toggle-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            color: #1a3d55;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .toggle-item input[type="checkbox"] {
+            appearance: none;
+            width: 40px;
+            height: 22px;
+            background: #cbdae6;
+            border-radius: 30px;
+            position: relative;
+            outline: none;
+            cursor: pointer;
+            transition: 0.25s ease;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+            flex-shrink: 0;
+        }
+
+        .toggle-item input[type="checkbox"]:checked {
+            background: #2f7f9e;
+        }
+
+        .toggle-item input[type="checkbox"]::before {
+            content: "";
+            position: absolute;
+            width: 18px;
+            height: 18px;
+            background: white;
+            border-radius: 50%;
+            top: 2px;
+            left: 2px;
+            transition: 0.25s ease;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+        }
+
+        .toggle-item input[type="checkbox"]:checked::before {
+            left: 20px;
+        }
+
+        .toggle-label {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .toggle-label .axis-label {
+            font-weight: 400;
+            color: #386582;
+            background: rgba(50, 100, 140, 0.08);
+            padding: 0.1rem 0.7rem;
+            border-radius: 30px;
+            font-size: 0.8rem;
+        }
+
+        .color-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+            color: #1d4057;
+        }
+
+        .color-badge .dot {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            background: #2b7d5e;
+            border-radius: 20px;
+            box-shadow: 0 2px 6px rgba(30, 100, 70, 0.2);
+        }
+
+        .style-tag {
+            background: rgba(40, 80, 110, 0.06);
+            padding: 0.2rem 1rem;
+            border-radius: 40px;
+            font-size: 0.8rem;
+            font-weight: 450;
+            color: #2e5a78;
+            border: 1px solid rgba(70, 130, 170, 0.1);
+        }
+
+        @media (max-width: 700px) {
+            .card { padding: 1.8rem 1.2rem; }
+            .header { flex-direction: column; align-items: flex-start; gap: 0.6rem; }
+            .control-panel { flex-direction: column; align-items: stretch; border-radius: 40px; padding: 1.2rem; }
+            .grid-toggles { justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+<div class="card">
+    <!-- header -->
+    <div class="header">
+        <div class="header-left">
+            <div class="main-title">
+                ⚡ grid lines
+                <small>matplotlib style</small>
+            </div>
+            <div class="subhead">
+                <span>📊 value1 (1–6)</span>
+                <span>📈 value2 (1,2,3,4,5,60)</span>
+                <span class="legend-badge">
+                    <i></i> data points
+                </span>
+            </div>
+        </div>
+        <div class="style-tag">
+            ✦ green · dashed · 0.5
+        </div>
+    </div>
+
+    <!-- chart -->
+    <div class="chart-wrapper">
+        <canvas id="gridChart"></canvas>
+    </div>
+
+    <!-- beautiful control panel  (grid toggles) -->
+    <div class="control-panel">
+        <div class="grid-toggles">
+            <label class="toggle-item">
+                <input type="checkbox" id="gridBoth" checked>
+                <span class="toggle-label">grid <span class="axis-label">both</span></span>
+            </label>
+            <label class="toggle-item">
+                <input type="checkbox" id="gridX" checked>
+                <span class="toggle-label">x <span class="axis-label">axis</span></span>
+            </label>
+            <label class="toggle-item">
+                <input type="checkbox" id="gridY" checked>
+                <span class="toggle-label">y <span class="axis-label">axis</span></span>
+            </label>
+        </div>
+        <div class="color-badge">
+            <span class="dot"></span> 
+            <span style="font-weight: 450;">grid: green, dashed, 0.5</span>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function() {
+        // ----- data from the python script (value1, value2) -----
+        const value1 = [1, 2, 3, 4, 5, 6];
+        const value2 = [1, 2, 3, 4, 5, 60];
+
+        // ----- chart setup -----
+        const ctx = document.getElementById('gridChart').getContext('2d');
+
+        // custom grid plugin: draws beautiful green dashed grid with lineWidth 0.5
+        const gridPlugin = {
+            id: 'customGrid',
+            afterDraw(chart) {
+                const { ctx, chartArea: { left, top, right, bottom }, scales } = chart;
+                const xScale = scales.x;
+                const yScale = scales.y;
+
+                // get current checkbox states
+                const showBoth = document.getElementById('gridBoth').checked;
+                const showX = document.getElementById('gridX').checked;
+                const showY = document.getElementById('gridY').checked;
+
+                // decide which axes to draw
+                const drawX = showBoth || showX;
+                const drawY = showBoth || showY;
+
+                // style: green, dashed, lineWidth 0.5
+                ctx.save();
+                ctx.strokeStyle = '#2b7d5e';    // elegant green
+                ctx.lineWidth = 0.5;
+                ctx.setLineDash([4, 5]);        // dashed (--)
+
+                // ----- draw X axis grid lines (vertical) -----
+                if (drawX && xScale && xScale.ticks) {
+                    const xTicks = xScale.ticks;
+                    for (let tick of xTicks) {
+                        const xPos = xScale.getPixelForValue(tick.value);
+                        if (xPos >= left && xPos <= right) {
+                            ctx.beginPath();
+                            ctx.moveTo(xPos, top);
+                            ctx.lineTo(xPos, bottom);
+                            ctx.stroke();
+                        }
+                    }
+                }
+
+                // ----- draw Y axis grid lines (horizontal) -----
+                if (drawY && yScale && yScale.ticks) {
+                    const yTicks = yScale.ticks;
+                    for (let tick of yTicks) {
+                        const yPos = yScale.getPixelForValue(tick.value);
+                        if (yPos >= top && yPos <= bottom) {
+                            ctx.beginPath();
+                            ctx.moveTo(left, yPos);
+                            ctx.lineTo(right, yPos);
+                            ctx.stroke();
+                        }
+                    }
+                }
+
+                ctx.restore();
+            }
+        };
+
+        // chart instance
+        const chart = new Chart(ctx, {
+            type: 'scatter',
+            data: {
+                datasets: [{
+                    label: 'value1 vs value2',
+                    data: value1.map((x, i) => ({ x: x, y: value2[i] })),
+                    backgroundColor: '#1f6d8f',
+                    borderColor: '#134a63',
+                    borderWidth: 1.2,
+                    pointRadius: 7,
+                    pointHoverRadius: 10,
+                    pointBorderColor: 'white',
+                    pointBorderWidth: 1.5,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false,
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(20, 40, 60, 0.9)',
+                        titleColor: '#e6f2fa',
+                        bodyColor: '#d0e3f0',
+                        cornerRadius: 16,
+                        padding: 12,
+                        callbacks: {
+                            label: (context) => {
+                                const raw = context.raw;
+                                return ` (${raw.x}, ${raw.y})`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        type: 'linear',
+                        min: 0.5,
+                        max: 6.8,
+                        grid: {
+                            display: false,   // we draw our own custom grid
+                            drawOnChartArea: false,
+                        },
+                        ticks: {
+                            stepSize: 1,
+                            color: '#1d4057',
+                            font: { size: 12, weight: '500' },
+                            backdropColor: 'transparent',
+                        },
+                        title: {
+                            display: true,
+                            text: 'values of value1',
+                            color: '#1a405a',
+                            font: { size: 14, weight: '500' },
+                            padding: { top: 10, bottom: 4 },
+                        }
+                    },
+                    y: {
+                        min: -2,
+                        max: 68,
+                        grid: {
+                            display: false,
+                            drawOnChartArea: false,
+                        },
+                        ticks: {
+                            stepSize: 10,
+                            color: '#1d4057',
+                            font: { size: 12, weight: '500' },
+                            backdropColor: 'transparent',
+                        },
+                        title: {
+                            display: true,
+                            text: 'values of value2',
+                            color: '#1a405a',
+                            font: { size: 14, weight: '500' },
+                            padding: { top: 4, bottom: 10 },
+                        }
+                    }
+                },
+                elements: {
+                    point: {
+                        hoverRadius: 10,
+                    }
+                },
+                layout: {
+                    padding: {
+                        top: 15,
+                        bottom: 10,
+                        left: 10,
+                        right: 15
+                    }
+                }
+            },
+            plugins: [gridPlugin]
+        });
+
+        // ----- connect checkboxes to re-render with plugin -----
+        const gridBoth = document.getElementById('gridBoth');
+        const gridX = document.getElementById('gridX');
+        const gridY = document.getElementById('gridY');
+
+        function updateGridAndRender() {
+            // the plugin reads checkboxes directly, just trigger a chart update
+            chart.update();
+        }
+
+        // add event listeners
+        gridBoth.addEventListener('change', updateGridAndRender);
+        gridX.addEventListener('change', updateGridAndRender);
+        gridY.addEventListener('change', updateGridAndRender);
+
+        // sync: if 'both' is checked, we may optionally disable x/y? 
+        // we keep it free: user can mix. but we add a small behaviour: 
+        // when both is unchecked, x & y can still toggle independently.
+        // But we want a nice UX: if both is unchecked and x/y are unchecked, grid disappears.
+        // That's already handled by plugin logic.
+
+        // also re-render on window resize (fine)
+        window.addEventListener('resize', () => { chart.update(); });
+
+        // extra: add a tiny initial animation
+        setTimeout(() => { chart.update(); }, 80);
+    })();
+</script>
+</body>
+</html>
