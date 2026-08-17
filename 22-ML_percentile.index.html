@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Percentile · Distribution Analysis</title>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js">
+    </script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(145deg, #f8f9fb 0%, #eef1f6 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            padding: 2rem 1.5rem;
+        }
+
+        .percentile-dash {
+            max-width: 1300px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 52px;
+            box-shadow: 0 25px 70px rgba(20, 40, 80, 0.04), 0 8px 20px rgba(0,0,0,0.02), inset 0 1px 2px rgba(255,255,255,0.9);
+            padding: 2.8rem 3rem 3.2rem;
+            border: 1px solid rgba(255, 255, 255, 0.7);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .percentile-dash::before {
+            content: '';
+            position: absolute;
+            top: -40%;
+            right: -20%;
+            width: 50%;
+            height: 50%;
+            background: radial-gradient(ellipse, rgba(220, 180, 80, 0.03) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .percentile-dash::after {
+            content: '';
+            position: absolute;
+            bottom: -30%;
+            left: -10%;
+            width: 40%;
+            height: 40%;
+            background: radial-gradient(ellipse, rgba(80, 120, 200, 0.02) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        /* header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 2.2rem;
+            padding-bottom: 1.2rem;
+            border-bottom: 2px solid rgba(40, 60, 100, 0.04);
+            position: relative;
+            z-index: 1;
+        }
+
+        .title-block {
+            display: flex;
+            flex-direction: column;
+            gap: 0.3rem;
+        }
+
+        .title-block h1 {
+            font-size: 2.2rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            color: #1a2a3c;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .title-block h1 .badge {
+            font-size: 0.65rem;
+            font-weight: 500;
+            background: rgba(40, 60, 100, 0.06);
+            color: #2a4a6a;
+            padding: 0.15rem 1rem;
+            border-radius: 30px;
+            letter-spacing: 0.3px;
+        }
+
+        .title-block .subtitle {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px 16px;
+            color: rgba(40, 60, 100, 0.5);
+            font-weight: 400;
+            font-size: 0.85rem;
+        }
+
+        .title-block .subtitle span {
+            background: rgba(40, 60, 100, 0.03);
+            padding: 0.2rem 0.9rem;
+            border-radius: 30px;
+            font-size: 0.75rem;
+            border: 1px solid rgba(40, 60, 100, 0.04);
+            color: rgba(40, 60, 100, 0.6);
+        }
+
+        .title-block .subtitle span i {
+            opacity: 0.4;
+            margin-right: 4px;
+        }
+
+        .badge-set {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            background: rgba(40, 60, 100, 0.02);
+            padding: 0.3rem 1.2rem;
+            border-radius: 50px;
+            border: 1px solid rgba(40, 60, 100, 0.04);
+            flex-wrap: wrap;
+        }
+
+        .badge-set .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.75rem;
+            color: rgba(40, 60, 100, 0.5);
+        }
+
+        .badge-set .stat-item .num {
+            color: #1a2a3c;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+
+        .badge-set .stat-item i {
+            opacity: 0.2;
+        }
+
+        /* main layout - asymmetrical */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1.3fr 0.7fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* left card - main result */
+        .result-card {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.3));
+            backdrop-filter: blur(4px);
+            border-radius: 32px;
+            padding: 2.2rem 2.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.7);
+            box-shadow: 0 4px 20px rgba(20, 40, 80, 0.02);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .result-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 28px rgba(20, 40, 80, 0.04);
+        }
+
+        .result-card .label {
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: rgba(40, 60, 100, 0.5);
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .result-card .label i {
+            opacity: 0.2;
+        }
+
+        .result-card .value {
+            font-size: 4.2rem;
+            font-weight: 700;
+            color: #1a2a3c;
+            letter-spacing: -0.02em;
+            line-height: 1.1;
+        }
+
+        .result-card .value .suffix {
+            font-size: 1.6rem;
+            color: rgba(40, 60, 100, 0.3);
+            font-weight: 500;
+            margin-left: 4px;
+        }
+
+        .result-card .formula {
+            margin-top: 0.8rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.8rem;
+            color: rgba(40, 60, 100, 0.4);
+            background: rgba(255, 255, 255, 0.3);
+            padding: 0.5rem 1rem;
+            border-radius: 12px;
+            border: 1px solid rgba(40, 60, 100, 0.04);
+        }
+
+        .result-card .formula .highlight {
+            color: #1a2a3c;
+            font-weight: 600;
+        }
+
+        .result-card .formula .pct {
+            color: #c0392b;
+            font-weight: 600;
+        }
+
+        .result-card .percentile-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 1.2rem;
+            padding: 0.5rem 1.2rem;
+            background: rgba(192, 57, 43, 0.04);
+            border-radius: 40px;
+            border: 1px solid rgba(192, 57, 43, 0.06);
+        }
+
+        .result-card .percentile-badge .pct-label {
+            font-size: 0.75rem;
+            color: rgba(40, 60, 100, 0.5);
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .result-card .percentile-badge .pct-value {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #c0392b;
+        }
+
+        /* right card - stats */
+        .stats-card {
+            background: rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(4px);
+            border-radius: 32px;
+            padding: 2rem 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            box-shadow: 0 4px 16px rgba(20, 40, 80, 0.02);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .stats-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(20, 40, 80, 0.04);
+        }
+
+        .stats-card .label {
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: rgba(40, 60, 100, 0.4);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stats-card .label i {
+            opacity: 0.2;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.8rem;
+        }
+
+        .stats-grid .stat-box {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 16px;
+            padding: 0.8rem 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            text-align: center;
+            transition: 0.2s;
+        }
+
+        .stats-grid .stat-box:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        .stats-grid .stat-box .num {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1a2a3c;
+        }
+
+        .stats-grid .stat-box .num.small {
+            font-size: 1.1rem;
+        }
+
+        .stats-grid .stat-box .lbl {
+            font-size: 0.6rem;
+            color: rgba(40, 60, 100, 0.4);
+            margin-top: 0.15rem;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        /* data chips - full width below */
+        .data-section {
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid rgba(40, 60, 100, 0.04);
+        }
+
+        .data-section .label-sm {
+            font-size: 0.7rem;
+            color: rgba(40, 60, 100, 0.4);
+            margin-bottom: 0.6rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .data-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .data-chip {
+            background: rgba(255, 255, 255, 0.3);
+            padding: 0.4rem 0.9rem;
+            border-radius: 12px;
+            border: 1px solid rgba(40, 60, 100, 0.04);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: 0.2s;
+            cursor: default;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #1a2a3c;
+            font-family: 'Courier New', monospace;
+        }
+
+        .data-chip:hover {
+            background: rgba(255, 255, 255, 0.6);
+        }
+
+        .data-chip .idx {
+            font-size: 0.55rem;
+            color: rgba(40, 60, 100, 0.25);
+            font-weight: 400;
+        }
+
+        /* chart */
+        .chart-wrapper {
+            background: rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(4px);
+            border-radius: 28px;
+            padding: 1.8rem 1.8rem 1.2rem;
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            box-shadow: 0 4px 16px rgba(20, 40, 80, 0.02);
+            margin-bottom: 2rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .chart-wrapper .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 0.8rem;
+            border-bottom: 1px solid rgba(40, 60, 100, 0.04);
+            margin-bottom: 1rem;
+        }
+
+        .chart-wrapper .chart-header .label {
+            font-weight: 500;
+            color: rgba(40, 60, 100, 0.5);
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .chart-wrapper .chart-header .label i {
+            opacity: 0.2;
+        }
+
+        .chart-wrapper .chart-header .meta {
+            font-size: 0.65rem;
+            color: rgba(40, 60, 100, 0.2);
+        }
+
+        .chart-wrapper canvas {
+            width: 100% !important;
+            max-height: 260px;
+            height: 240px !important;
+        }
+
+        /* footer */
+        .footer-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 0.8rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .footer-card {
+            background: rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(2px);
+            border-radius: 16px;
+            padding: 0.7rem 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            text-align: center;
+            transition: 0.2s;
+        }
+
+        .footer-card:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        .footer-card .num {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #1a2a3c;
+        }
+
+        .footer-card .lbl {
+            font-size: 0.6rem;
+            color: rgba(40, 60, 100, 0.35);
+            margin-top: 0.1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .footer-card .num.pct-color {
+            color: #c0392b;
+        }
+
+        @media (max-width: 1024px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+            .stats-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+            .footer-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        @media (max-width: 750px) {
+            .percentile-dash {
+                padding: 1.5rem;
+            }
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.6rem;
+            }
+            .title-block h1 {
+                font-size: 1.6rem;
+                flex-wrap: wrap;
+            }
+            .result-card .value {
+                font-size: 3rem;
+            }
+            .result-card .value .suffix {
+                font-size: 1.2rem;
+            }
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+            .footer-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+            .footer-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+            .data-chips {
+                gap: 0.3rem;
+            }
+            .data-chip {
+                padding: 0.3rem 0.6rem;
+                font-size: 0.75rem;
+            }
+            .result-card {
+                padding: 1.5rem;
+            }
+            .stats-card {
+                padding: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="percentile-dash">
+
+        <!-- header -->
+        <div class="header">
+            <div class="title-block">
+                <h1>
+                    <i class="fas fa-percent" style="font-size: 1.8rem; opacity: 0.2;"></i>
+                    Percentile
+                    <span class="badge">numpy</span>
+                </h1>
+                <div class="subtitle">
+                    <span><i class="fas fa-cube"></i> numpy.percentile()</span>
+                    <span><i class="fas fa-hashtag"></i> n = 21</span>
+                    <span><i class="fas fa-arrow-right"></i> p = 100</span>
+                </div>
+            </div>
+            <div class="badge-set">
+                <div class="stat-item">
+                    <i class="fas fa-microchip"></i>
+                    <span>numpy: <span class="num">1.26.4</span></span>
+                </div>
+                <div class="stat-item">
+                    <i class="fas fa-terminal"></i>
+                    <span>method: <span class="num">percentile()</span></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- main grid -->
+        <div class="main-grid">
+            <!-- left: main result -->
+            <div class="result-card">
+                <div class="label">
+                    <i class="fas fa-bullseye"></i> 100th Percentile
+                </div>
+                <div class="value">
+                    82<span class="suffix">years</span>
+                </div>
+                <div class="formula">
+                    P<sub>100</sub> = <span class="highlight">max(ages)</span> = <span class="pct">82</span>
+                </div>
+                <div class="percentile-badge">
+                    <span class="pct-label"><i class="fas fa-arrow-up"></i> maximum value</span>
+                    <span class="pct-value">82</span>
+                </div>
+            </div>
+
+            <!-- right: stats summary -->
+            <div class="stats-card">
+                <div class="label">
+                    <i class="fas fa-chart-simple"></i> Distribution
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-box">
+                        <div class="num">31.0</div>
+                        <div class="lbl">Median (50th)</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="num">80</div>
+                        <div class="lbl">90th Percentile</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="num">82</div>
+                        <div class="lbl">Max (100th)</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="num">2</div>
+                        <div class="lbl">Min (0th)</div>
+                    </div>
+                </div>
+
+                <!-- data chips -->
+                <div class="data-section">
+                    <div class="label-sm">
+                        <i class="fas fa-database"></i> Age Data
+                    </div>
+                    <div class="data-chips">
+                        <span class="data-chip"><span class="idx">#0</span>5</span>
+                        <span class="data-chip"><span class="idx">#1</span>31</span>
+                        <span class="data-chip"><span class="idx">#2</span>43</span>
+                        <span class="data-chip"><span class="idx">#3</span>48</span>
+                        <span class="data-chip"><span class="idx">#4</span>50</span>
+                        <span class="data-chip"><span class="idx">#5</span>41</span>
+                        <span class="data-chip"><span class="idx">#6</span>7</span>
+                        <span class="data-chip"><span class="idx">#7</span>11</span>
+                        <span class="data-chip"><span class="idx">#8</span>15</span>
+                        <span class="data-chip"><span class="idx">#9</span>39</span>
+                        <span class="data-chip"><span class="idx">#10</span>80</span>
+                        <span class="data-chip"><span class="idx">#11</span>82</span>
+                        <span class="data-chip"><span class="idx">#12</span>32</span>
+                        <span class="data-chip"><span class="idx">#13</span>2</span>
+                        <span class="data-chip"><span class="idx">#14</span>8</span>
+                        <span class="data-chip"><span class="idx">#15</span>6</span>
+                        <span class="data-chip"><span class="idx">#16</span>25</span>
+                        <span class="data-chip"><span class="idx">#17</span>36</span>
+                        <span class="data-chip"><span class="idx">#18</span>27</span>
+                        <span class="data-chip"><span class="idx">#19</span>61</span>
+                        <span class="data-chip"><span class="idx">#20</span>31</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- chart -->
+        <div class="chart-wrapper">
+            <div class="chart-header">
+                <span class="label">
+                    <i class="fas fa-chart-line"></i> Age Distribution
+                </span>
+                <span class="meta">100th percentile highlighted</span>
+            </div>
+            <canvas id="distributionChart"></canvas>
+        </div>
+
+        <!-- footer -->
+        <div class="footer-grid">
+            <div class="footer-card">
+                <div class="num">21</div>
+                <div class="lbl">Count</div>
+            </div>
+            <div class="footer-card">
+                <div class="num">32.14</div>
+                <div class="lbl">Mean</div>
+            </div>
+            <div class="footer-card">
+                <div class="num">31.0</div>
+                <div class="lbl">Median</div>
+            </div>
+            <div class="footer-card">
+                <div class="num pct-color">82</div>
+                <div class="lbl">100th Percentile</div>
+            </div>
+            <div class="footer-card">
+                <div class="num">80</div>
+                <div class="lbl">90th Percentile</div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        (function() {
+            // ----- data -----
+            const ages = [5, 31, 43, 48, 50, 41, 7, 11, 15, 39, 80, 82, 32, 2, 8, 6, 25, 36, 27, 61, 31];
+            const p100 = 82;
+            const mean = 32.142857142857146;
+
+            // Sort for percentile visualization
+            const sorted = [...ages].sort((a, b) => a - b);
+
+            // ----- chart: distribution with percentile markers -----
+            const ctx = document.getElementById('distributionChart').getContext('2d');
+
+            const percentileLinePlugin = {
+                id: 'percentileLine',
+                afterDraw: function(chart) {
+                    const ctx = chart.ctx;
+                    const xScale = chart.scales.x;
+                    const yScale = chart.scales.y;
+
+                    if (!xScale || !yScale) return;
+
+                    // Find position of 82 (100th percentile)
+                    const p100Pos = xScale.getPixelForValue(82);
+
+                    ctx.save();
+
+                    // 100th percentile line
+                    ctx.setLineDash([6, 4]);
+                    ctx.strokeStyle = 'rgba(192, 57, 43, 0.3)';
+                    ctx.lineWidth = 2.5;
+
+                    ctx.beginPath();
+                    ctx.moveTo(p100Pos, yScale.top);
+                    ctx.lineTo(p100Pos, yScale.bottom);
+                    ctx.stroke();
+
+                    // Label
+                    ctx.setLineDash([]);
+                    ctx.fillStyle = 'rgba(192, 57, 43, 0.4)';
+                    ctx.font = '10px Inter, sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('P100 = 82', p100Pos, yScale.top - 6);
+
+                    ctx.restore();
+                }
+            };
+
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: sorted.map(d => d.toString()),
+                    datasets: [{
+                        label: 'Age',
+                        data: sorted,
+                        backgroundColor: sorted.map(d =>
+                            d === 82 ?
+                            'rgba(192, 57, 43, 0.35)' :
+                            'rgba(40, 60, 100, 0.15)'
+                        ),
+                        borderColor: sorted.map(d =>
+                            d === 82 ?
+                            'rgba(192, 57, 43, 0.6)' :
+                            'rgba(40, 60, 100, 0.15)'
+                        ),
+                        borderWidth: 1.5,
+                        borderRadius: 4,
+                        barPercentage: 0.7,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(255,255,255,0.92)',
+                            titleColor: '#1a2a3c',
+                            bodyColor: 'rgba(40,60,100,0.7)',
+                            cornerRadius: 12,
+                            padding: 10,
+                            borderColor: 'rgba(40,60,100,0.04)',
+                            borderWidth: 1,
+                            callbacks: {
+                                label: (ctx) => {
+                                    const val = ctx.parsed.y;
+                                    const pct = val === 82 ? ' (100th percentile)' : '';
+                                    return `Age: ${val}${pct}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: {
+                                color: 'rgba(40,60,100,0.25)',
+                                font: { size: 9, weight: '400' },
+                                maxTicksLimit: 15,
+                            },
+                            title: {
+                                display: true,
+                                text: 'Sorted Ages',
+                                color: 'rgba(40,60,100,0.15)',
+                                font: { size: 10, weight: '400' }
+                            }
+                        },
+                        y: {
+                            grid: {
+                                display: true,
+                                color: 'rgba(40,60,100,0.02)',
+                                drawBorder: false,
+                            },
+                            ticks: {
+                                color: 'rgba(40,60,100,0.2)',
+                                font: { size: 9 }
+                            },
+                            title: {
+                                display: true,
+                                text: 'Age',
+                                color: 'rgba(40,60,100,0.15)',
+                                font: { size: 10, weight: '400' }
+                            }
+                        }
+                    },
+                    layout: {
+                        padding: { top: 20, bottom: 8, left: 8, right: 8 }
+                    }
+                },
+                plugins: [percentileLinePlugin]
+            });
+
+        })();
+    </script>
+</body>
+</html>
