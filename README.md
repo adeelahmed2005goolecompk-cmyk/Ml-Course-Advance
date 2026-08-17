@@ -23,7 +23,6 @@ reading, DataFrame creation, column selection, and data display using Pandas.
 
 
 
-
 python code:
 
 ```
