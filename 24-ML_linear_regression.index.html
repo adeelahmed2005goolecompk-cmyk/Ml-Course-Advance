@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Regression · Minimal</title>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js">
+    </script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #eef2f7;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            padding: 2rem 1.5rem;
+        }
+
+        .container {
+            max-width: 1300px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 40px;
+            box-shadow: 0 25px 60px rgba(0, 20, 40, 0.06), 0 8px 20px rgba(0,0,0,0.02);
+            padding: 2.8rem 3rem 3.2rem;
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .container::before {
+            content: '';
+            position: absolute;
+            top: -40%;
+            right: -20%;
+            width: 50%;
+            height: 50%;
+            background: radial-gradient(ellipse, rgba(100, 150, 220, 0.03) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        /* header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 2.2rem;
+            padding-bottom: 1.2rem;
+            border-bottom: 2px solid rgba(0, 20, 40, 0.04);
+        }
+
+        .title-block h1 {
+            font-size: 1.8rem;
+            font-weight: 600;
+            color: #1a2a3c;
+            letter-spacing: -0.02em;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .title-block h1 i {
+            color: #4a7ab8;
+            opacity: 0.3;
+            font-size: 1.6rem;
+        }
+
+        .title-block .subtitle {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px 14px;
+            color: rgba(0, 20, 40, 0.3);
+            font-size: 0.8rem;
+            margin-top: 0.2rem;
+        }
+
+        .title-block .subtitle span {
+            background: rgba(0, 20, 40, 0.03);
+            padding: 0.15rem 0.8rem;
+            border-radius: 30px;
+            font-size: 0.7rem;
+            border: 1px solid rgba(0, 20, 40, 0.02);
+        }
+
+        .badge-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: rgba(0, 20, 40, 0.02);
+            padding: 0.3rem 1.2rem;
+            border-radius: 40px;
+            border: 1px solid rgba(0, 20, 40, 0.04);
+        }
+
+        .badge-group .item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.7rem;
+            color: rgba(0, 20, 40, 0.3);
+        }
+
+        .badge-group .item .num {
+            color: #1a2a3c;
+            font-weight: 600;
+            font-size: 0.75rem;
+        }
+
+        .badge-group .item i {
+            opacity: 0.2;
+        }
+
+        /* main layout - 3 column */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.5fr 1fr;
+            gap: 1.8rem;
+            margin-bottom: 2rem;
+        }
+
+        /* cards */
+        .card {
+            background: rgba(255, 255, 255, 0.5);
+            backdrop-filter: blur(4px);
+            border-radius: 24px;
+            padding: 1.8rem 1.8rem;
+            border: 1px solid rgba(255, 255, 255, 0.7);
+            box-shadow: 0 2px 12px rgba(0, 20, 40, 0.02);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 20, 40, 0.03);
+        }
+
+        .card .label {
+            font-size: 0.6rem;
+            font-weight: 500;
+            color: rgba(0, 20, 40, 0.2);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.6rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .card .label i {
+            opacity: 0.3;
+        }
+
+        /* left card - stats */
+        .stat-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem 0.8rem;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+
+        .stat-row .stat-label {
+            font-size: 0.75rem;
+            color: rgba(0, 20, 40, 0.3);
+        }
+
+        .stat-row .stat-value {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #1a2a3c;
+            font-family: 'Courier New', monospace;
+        }
+
+        .stat-row .stat-value.highlight {
+            color: #4a7ab8;
+        }
+
+        .stat-row .stat-value.negative {
+            color: #c0392b;
+        }
+
+        /* center card - equation */
+        .equation-box {
+            text-align: center;
+            padding: 0.5rem 0;
+        }
+
+        .equation-box .eq {
+            font-family: 'Courier New', monospace;
+            font-size: 2rem;
+            font-weight: 700;
+            color: #1a2a3c;
+            letter-spacing: -0.02em;
+        }
+
+        .equation-box .eq .highlight {
+            color: #4a7ab8;
+        }
+
+        .equation-box .eq .negative {
+            color: #c0392b;
+        }
+
+        .equation-box .r2 {
+            font-size: 0.85rem;
+            color: rgba(0, 20, 40, 0.2);
+            margin-top: 0.3rem;
+            font-family: 'Courier New', monospace;
+        }
+
+        .equation-box .r2 span {
+            color: #1a2a3c;
+            font-weight: 600;
+        }
+
+        /* right card - data preview */
+        .data-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.3rem;
+            max-height: 180px;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+
+        .data-grid::-webkit-scrollbar {
+            width: 2px;
+        }
+
+        .data-grid::-webkit-scrollbar-track {
+            background: rgba(0, 20, 40, 0.02);
+        }
+
+        .data-grid::-webkit-scrollbar-thumb {
+            background: rgba(0, 20, 40, 0.04);
+            border-radius: 10px;
+        }
+
+        .data-pair {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.3rem 0.6rem;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            font-size: 0.75rem;
+            font-family: 'Courier New', monospace;
+            color: rgba(0, 20, 40, 0.4);
+        }
+
+        .data-pair .x {
+            color: #4a7ab8;
+        }
+
+        .data-pair .y {
+            color: #c0392b;
+        }
+
+        /* chart */
+        .chart-wrapper {
+            background: rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(4px);
+            border-radius: 24px;
+            padding: 1.8rem 1.8rem 1.2rem;
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            box-shadow: 0 2px 12px rgba(0, 20, 40, 0.02);
+            margin-bottom: 2rem;
+        }
+
+        .chart-wrapper .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 0.8rem;
+            border-bottom: 1px solid rgba(0, 20, 40, 0.04);
+            margin-bottom: 1rem;
+        }
+
+        .chart-wrapper .chart-header .label {
+            font-size: 0.65rem;
+            font-weight: 500;
+            color: rgba(0, 20, 40, 0.2);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .chart-wrapper .chart-header .label i {
+            opacity: 0.2;
+        }
+
+        .chart-wrapper .chart-header .meta {
+            font-size: 0.6rem;
+            color: rgba(0, 20, 40, 0.1);
+        }
+
+        .chart-wrapper canvas {
+            width: 100% !important;
+            max-height: 300px;
+            height: 280px !important;
+        }
+
+        /* footer */
+        .footer-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.8rem;
+        }
+
+        .footer-item {
+            background: rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(2px);
+            border-radius: 16px;
+            padding: 0.7rem 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            text-align: center;
+        }
+
+        .footer-item .num {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #1a2a3c;
+        }
+
+        .footer-item .lbl {
+            font-size: 0.5rem;
+            color: rgba(0, 20, 40, 0.15);
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            margin-top: 0.1rem;
+        }
+
+        .footer-item .num.highlight {
+            color: #4a7ab8;
+        }
+
+        @media (max-width: 1024px) {
+            .main-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 1.5rem;
+            }
+            .footer-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1.5rem;
+            }
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.6rem;
+            }
+            .main-grid {
+                grid-template-columns: 1fr;
+                gap: 1.2rem;
+            }
+            .equation-box .eq {
+                font-size: 1.6rem;
+            }
+            .footer-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .footer-grid {
+                grid-template-columns: 1fr;
+            }
+            .badge-group {
+                flex-wrap: wrap;
+                gap: 6px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+
+        <!-- header -->
+        <div class="header">
+            <div class="title-block">
+                <h1>
+                    <i class="fas fa-arrow-trend-up"></i>
+                    Regression
+                </h1>
+                <div class="subtitle">
+                    <span><i class="fas fa-hashtag"></i> n = 13</span>
+                    <span><i class="fas fa-arrow-right"></i> linear</span>
+                    <span><i class="fas fa-arrow-right"></i> scatter</span>
+                </div>
+            </div>
+            <div class="badge-group">
+                <div class="item">
+                    <i class="fas fa-cube"></i>
+                    <span>numpy <span class="num">1.26</span></span>
+                </div>
+                <div class="item">
+                    <i class="fas fa-code"></i>
+                    <span>scatter()</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- main grid -->
+        <div class="main-grid">
+            <!-- left: stats -->
+            <div class="card">
+                <div class="label"><i class="fas fa-chart-simple"></i> Statistics</div>
+                <div class="stat-list">
+                    <div class="stat-row">
+                        <span class="stat-label">Slope (m)</span>
+                        <span class="stat-value negative">−0.45</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Intercept (b)</span>
+                        <span class="stat-value">93.20</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">R²</span>
+                        <span class="stat-value highlight">0.12</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Data Points</span>
+                        <span class="stat-value">13</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- center: equation -->
+            <div class="card">
+                <div class="label"><i class="fas fa-calculator"></i> Equation</div>
+                <div class="equation-box">
+                    <div class="eq">
+                        y = <span class="negative">−0.45</span>x + <span class="highlight">93.20</span>
+                    </div>
+                    <div class="r2">
+                        R² = <span>0.12</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- right: data preview -->
+            <div class="card">
+                <div class="label"><i class="fas fa-table"></i> Data</div>
+                <div class="data-grid">
+                    <div class="data-pair"><span class="x">5</span><span class="y">99</span></div>
+                    <div class="data-pair"><span class="x">7</span><span class="y">86</span></div>
+                    <div class="data-pair"><span class="x">8</span><span class="y">87</span></div>
+                    <div class="data-pair"><span class="x">7</span><span class="y">88</span></div>
+                    <div class="data-pair"><span class="x">2</span><span class="y">111</span></div>
+                    <div class="data-pair"><span class="x">17</span><span class="y">86</span></div>
+                    <div class="data-pair"><span class="x">2</span><span class="y">103</span></div>
+                    <div class="data-pair"><span class="x">9</span><span class="y">87</span></div>
+                    <div class="data-pair"><span class="x">4</span><span class="y">94</span></div>
+                    <div class="data-pair"><span class="x">11</span><span class="y">78</span></div>
+                    <div class="data-pair"><span class="x">12</span><span class="y">77</span></div>
+                    <div class="data-pair"><span class="x">9</span><span class="y">85</span></div>
+                    <div class="data-pair"><span class="x">6</span><span class="y">86</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- chart -->
+        <div class="chart-wrapper">
+            <div class="chart-header">
+                <span class="label"><i class="fas fa-scatter-chart"></i> Scatter Plot</span>
+                <span class="meta">regression line</span>
+            </div>
+            <canvas id="regressionChart"></canvas>
+        </div>
+
+        <!-- footer -->
+        <div class="footer-grid">
+            <div class="footer-item">
+                <div class="num">13</div>
+                <div class="lbl">Samples</div>
+            </div>
+            <div class="footer-item">
+                <div class="num highlight">−0.45</div>
+                <div class="lbl">Slope</div>
+            </div>
+            <div class="footer-item">
+                <div class="num">93.20</div>
+                <div class="lbl">Intercept</div>
+            </div>
+            <div class="footer-item">
+                <div class="num highlight">0.12</div>
+                <div class="lbl">R²</div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        (function() {
+            const x = [5, 7, 8, 7, 2, 17, 2, 9, 4, 11, 12, 9, 6];
+            const y = [99, 86, 87, 88, 111, 86, 103, 87, 94, 78, 77, 85, 86];
+
+            const n = x.length;
+            let sumX = 0,
+                sumY = 0,
+                sumXY = 0,
+                sumX2 = 0;
+            for (let i = 0; i < n; i++) {
+                sumX += x[i];
+                sumY += y[i];
+                sumXY += x[i] * y[i];
+                sumX2 += x[i] * x[i];
+            }
+
+            const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+            const intercept = (sumY - slope * sumX) / n;
+
+            const meanY = sumY / n;
+            let ssTot = 0,
+                ssRes = 0;
+            for (let i = 0; i < n; i++) {
+                ssTot += (y[i] - meanY) ** 2;
+                const pred = slope * x[i] + intercept;
+                ssRes += (y[i] - pred) ** 2;
+            }
+            const r2 = 1 - (ssRes / ssTot);
+
+            const ctx = document.getElementById('regressionChart').getContext('2d');
+
+            const minX = Math.min(...x) - 1;
+            const maxX = Math.max(...x) + 1;
+
+            const regressionPlugin = {
+                id: 'regressionLine',
+                afterDraw: function(chart) {
+                    const ctx = chart.ctx;
+                    const xScale = chart.scales.x;
+                    const yScale = chart.scales.y;
+
+                    if (!xScale || !yScale) return;
+
+                    const p1x = xScale.getPixelForValue(minX);
+                    const p1y = yScale.getPixelForValue(slope * minX + intercept);
+                    const p2x = xScale.getPixelForValue(maxX);
+                    const p2y = yScale.getPixelForValue(slope * maxX + intercept);
+
+                    ctx.save();
+                    ctx.shadowColor = 'rgba(74, 122, 184, 0.05)';
+                    ctx.shadowBlur = 10;
+
+                    ctx.beginPath();
+                    ctx.moveTo(p1x, p1y);
+                    ctx.lineTo(p2x, p2y);
+                    ctx.strokeStyle = 'rgba(74, 122, 184, 0.15)';
+                    ctx.lineWidth = 1.5;
+                    ctx.setLineDash([6, 4]);
+                    ctx.stroke();
+
+                    ctx.restore();
+
+                    // equation label
+                    ctx.save();
+                    ctx.fillStyle = 'rgba(0, 20, 40, 0.06)';
+                    ctx.font = '8px Inter, sans-serif';
+                    ctx.textAlign = 'left';
+                    const labelX = p2x - 70;
+                    const labelY = p2y - 10;
+                    ctx.fillText(`y = ${slope.toFixed(2)}x + ${intercept.toFixed(1)}`, labelX, labelY);
+                    ctx.fillStyle = 'rgba(0, 20, 40, 0.04)';
+                    ctx.fillText(`R² = ${r2.toFixed(2)}`, labelX, labelY + 14);
+                    ctx.restore();
+                }
+            };
+
+            new Chart(ctx, {
+                type: 'scatter',
+                data: {
+                    datasets: [{
+                        label: 'Data',
+                        data: x.map((xi, i) => ({ x: xi, y: y[i] })),
+                        backgroundColor: 'rgba(74, 122, 184, 0.15)',
+                        borderColor: 'rgba(74, 122, 184, 0.05)',
+                        borderWidth: 1,
+                        pointRadius: 5,
+                        pointHoverRadius: 8,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(255,255,255,0.9)',
+                            titleColor: '#1a2a3c',
+                            bodyColor: 'rgba(0,20,40,0.5)',
+                            cornerRadius: 12,
+                            padding: 10,
+                            borderColor: 'rgba(0,20,40,0.02)',
+                            borderWidth: 1,
+                            callbacks: {
+                                label: (ctx) => `(${ctx.raw.x}, ${ctx.raw.y})`
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                display: true,
+                                color: 'rgba(0,20,40,0.02)',
+                                drawBorder: false,
+                            },
+                            ticks: {
+                                color: 'rgba(0,20,40,0.1)',
+                                font: { size: 9 }
+                            },
+                            title: {
+                                display: true,
+                                text: 'x',
+                                color: 'rgba(0,20,40,0.05)',
+                                font: { size: 10, weight: '400' }
+                            },
+                            min: -1,
+                            max: 19,
+                        },
+                        y: {
+                            grid: {
+                                display: true,
+                                color: 'rgba(0,20,40,0.02)',
+                                drawBorder: false,
+                            },
+                            ticks: {
+                                color: 'rgba(0,20,40,0.1)',
+                                font: { size: 9 }
+                            },
+                            title: {
+                                display: true,
+                                text: 'y',
+                                color: 'rgba(0,20,40,0.05)',
+                                font: { size: 10, weight: '400' }
+                            },
+                            min: 70,
+                            max: 120,
+                        }
+                    },
+                    layout: {
+                        padding: { top: 20, bottom: 10, left: 10, right: 20 }
+                    }
+                },
+                plugins: [regressionPlugin]
+            });
+
+        })();
+    </script>
+</body>
+</html>
