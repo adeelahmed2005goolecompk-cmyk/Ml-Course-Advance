@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>⚡ Dynamic Linear Regression</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: #0f1923;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1300px;
+            width: 100%;
+            background: #1a2a3a;
+            border-radius: 32px;
+            padding: 32px 36px 40px;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.7);
+            border: 1px solid rgba(255,255,255,0.06);
+        }
+        
+        /* ===== WELCOME BANNER - CENTERED ===== */
+        .welcome-banner {
+            text-align: center;
+            padding: 16px 20px;
+            margin-bottom: 22px;
+            background: linear-gradient(135deg, rgba(247, 183, 49, 0.08), rgba(245, 166, 35, 0.04));
+            border-radius: 60px;
+            border: 1px solid rgba(247, 183, 49, 0.10);
+            box-shadow: 0 0 40px rgba(247, 183, 49, 0.03);
+            position: relative;
+        }
+        .welcome-banner h2 {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            font-weight: 700;
+            font-size: 1.6rem;
+            letter-spacing: 1px;
+            background: linear-gradient(135deg, #f7b731, #f5a623, #f7b731);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: shimmer 3s ease-in-out infinite;
+            text-shadow: 0 0 30px rgba(247, 183, 49, 0.10);
+        }
+        @keyframes shimmer {
+            0%, 100% { background-position: 0% center; }
+            50% { background-position: 200% center; }
+        }
+        .welcome-banner .glow-line {
+            position: absolute;
+            bottom: -1px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 40%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #f7b731, transparent);
+            opacity: 0.25;
+        }
+        /* ===================================== */
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .header h1 {
+            color: #e8f0f8;
+            font-weight: 700;
+            font-size: 2rem;
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .header h1 span {
+            background: linear-gradient(135deg, #f7b731, #f5a623);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .stats-grid {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            background: rgba(255,255,255,0.04);
+            padding: 8px 24px 8px 20px;
+            border-radius: 60px;
+            border: 1px solid rgba(255,255,255,0.06);
+        }
+        .stats-grid .stat {
+            color: #b0cfe5;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .stats-grid .stat strong {
+            color: white;
+            font-weight: 600;
+            background: #1f3d54;
+            padding: 2px 14px;
+            border-radius: 40px;
+            font-size: 0.95rem;
+        }
+        .stats-grid .stat .r2-val {
+            background: #2a5d7a;
+            color: #b3e8ff;
+        }
+        .chart-area {
+            position: relative;
+            height: 460px;
+            background: #0d1a26;
+            border-radius: 28px;
+            padding: 12px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255,255,255,0.04);
+        }
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+            padding-top: 18px;
+            border-top: 1px solid rgba(255,255,255,0.06);
+        }
+        .equation-box {
+            background: #0d1a26;
+            padding: 8px 24px 8px 20px;
+            border-radius: 60px;
+            border: 1px solid #2a4a5e;
+            color: #cde0ef;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .equation-box code {
+            background: #1a2f3f;
+            padding: 4px 18px;
+            border-radius: 40px;
+            color: #f7b731;
+            font-weight: 600;
+            font-size: 1.05rem;
+        }
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .control-group label {
+            color: #b0cfe5;
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+        .control-group select {
+            background: #0d1a26;
+            border: 1px solid #2a4a5e;
+            color: white;
+            padding: 8px 28px 8px 16px;
+            border-radius: 40px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            outline: none;
+            transition: 0.2s;
+        }
+        .control-group select:hover {
+            border-color: #4a8aaa;
+            background: #152837;
+        }
+        .control-group .r2-badge {
+            background: #1a3a50;
+            padding: 4px 18px;
+            border-radius: 40px;
+            color: #b3defa;
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+        .slider-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .slider-group input[type="range"] {
+            width: 140px;
+            height: 4px;
+            -webkit-appearance: none;
+            background: #2a4a5e;
+            border-radius: 4px;
+            outline: none;
+            transition: 0.2s;
+        }
+        .slider-group input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #f7b731;
+            cursor: pointer;
+            box-shadow: 0 0 12px rgba(247, 183, 49, 0.3);
+        }
+        .slider-group input[type="range"]::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #f7b731;
+            cursor: pointer;
+            border: none;
+        }
+        .slider-group .val {
+            color: white;
+            font-weight: 600;
+            min-width: 38px;
+            text-align: center;
+            background: #0d1a26;
+            padding: 2px 10px;
+            border-radius: 30px;
+            font-size: 0.9rem;
+        }
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #b0cfe5;
+            font-size: 0.9rem;
+        }
+        .checkbox-group input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: #f7b731;
+            cursor: pointer;
+        }
+        @media (max-width: 800px) {
+            .container { padding: 20px; }
+            .controls { flex-direction: column; align-items: stretch; }
+            .equation-box { justify-content: center; }
+            .control-group { justify-content: center; }
+            .slider-group input[type="range"] { width: 100px; }
+            .welcome-banner h2 { font-size: 1.2rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    
+    <!-- ===== WELCOME BANNER ===== -->
+    <div class="welcome-banner">
+        <h2>✨ Welcome-Into-Linear-Regression! ✨</h2>
+        <div class="glow-line"></div>
+    </div>
+
+    <!-- Header -->
+    <div class="header">
+        <h1>⚡ <span>regression</span> · dynamic</h1>
+        <div class="stats-grid">
+            <div class="stat">📊 n <strong id="nDisplay">60</strong></div>
+            <div class="stat">📈 R² <strong class="r2-val" id="r2Display">0.9599</strong></div>
+        </div>
+    </div>
+
+    <!-- Chart -->
+    <div class="chart-area">
+        <canvas id="regChart"></canvas>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls">
+        <div class="equation-box">
+            <span>📐</span> <code id="equationText">y = 7.0785·x + 34.1820</code>
+        </div>
+        <div class="control-group">
+            <div class="slider-group">
+                <label>🔍 zoom</label>
+                <input type="range" id="zoomSlider" min="0.5" max="2" step="0.1" value="1" />
+                <span class="val" id="zoomVal">1.0</span>
+            </div>
+            <label for="featureSelect">feature</label>
+            <select id="featureSelect">
+                <option value="0">Hours_1 (first)</option>
+                <option value="1">Hours_2 (second)</option>
+            </select>
+            <span class="r2-badge" id="r2Inline">R² 0.9599</span>
+            <div class="checkbox-group">
+                <input type="checkbox" id="showPoints" checked />
+                <label for="showPoints">points</label>
+            </div>
+            <div class="checkbox-group">
+                <input type="checkbox" id="showLine" checked />
+                <label for="showLine">line</label>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function() {
+        // ---------- DATA ----------
+        const raw = [
+            [1.2, 5.1, 38.7], [1.8, 5.8, 45.2], [2.3, 4.2, 44.5],
+            [2.9, 6.3, 54.1], [3.4, 5.9, 57.8], [4.0, 7.2, 68.4],
+            [4.5, 6.8, 70.2], [5.1, 5.5, 68.9], [5.6, 8.1, 78.5],
+            [6.2, 7.5, 82.1], [6.7, 6.2, 79.8], [7.3, 7.8, 88.4],
+            [7.8, 8.5, 93.2], [8.4, 6.9, 90.5], [8.9, 8.2, 96.8],
+            [9.5, 7.1, 94.1], [1.5, 4.8, 40.3], [2.1, 6.1, 49.8],
+            [2.8, 5.2, 50.6], [3.3, 7.4, 61.2], [3.9, 6.5, 63.9],
+            [4.6, 5.8, 66.7], [5.2, 7.9, 76.4], [5.8, 6.3, 74.8],
+            [6.3, 8.3, 84.2], [6.9, 7.6, 86.9], [7.4, 6.7, 83.5],
+            [8.0, 8.0, 92.7], [8.6, 7.3, 91.3], [9.1, 8.6, 97.5],
+            [9.7, 7.9, 95.8], [1.1, 5.4, 37.9], [1.7, 4.5, 39.8],
+            [2.4, 6.9, 52.4], [3.0, 5.6, 53.7], [3.6, 7.1, 63.5],
+            [4.2, 6.2, 64.8], [4.8, 8.0, 74.9], [5.4, 7.2, 76.3],
+            [6.0, 6.8, 79.1], [6.6, 8.4, 86.5], [7.2, 7.3, 85.2],
+            [7.9, 8.1, 92.1], [8.5, 7.6, 91.8], [9.2, 8.7, 97.9],
+            [1.4, 5.0, 39.5], [2.0, 5.9, 47.8], [2.6, 4.8, 46.2],
+            [3.2, 6.7, 57.5], [3.8, 6.4, 61.8], [4.4, 7.5, 70.8],
+            [5.0, 6.1, 68.1], [5.7, 8.2, 78.9], [6.3, 7.0, 80.5],
+            [6.9, 8.0, 86.8], [7.5, 7.7, 88.5], [8.1, 7.4, 89.8],
+            [8.7, 8.3, 94.6], [9.3, 7.8, 94.3], [9.9, 8.5, 99.2]
+        ];
+
+        // DOM refs
+        const canvas = document.getElementById('regChart');
+        const ctx = canvas.getContext('2d');
+        const eqText = document.getElementById('equationText');
+        const r2Display = document.getElementById('r2Display');
+        const r2Inline = document.getElementById('r2Inline');
+        const nDisplay = document.getElementById('nDisplay');
+        const featureSelect = document.getElementById('featureSelect');
+        const zoomSlider = document.getElementById('zoomSlider');
+        const zoomVal = document.getElementById('zoomVal');
+        const showPointsCb = document.getElementById('showPoints');
+        const showLineCb = document.getElementById('showLine');
+
+        // Regression calculator
+        function calcRegression(xArr, yArr) {
+            const n = xArr.length;
+            let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
+            for (let i = 0; i < n; i++) {
+                sumX += xArr[i];
+                sumY += yArr[i];
+                sumXY += xArr[i] * yArr[i];
+                sumX2 += xArr[i] * xArr[i];
+            }
+            const meanX = sumX / n;
+            const meanY = sumY / n;
+            const slope = (sumXY - n * meanX * meanY) / (sumX2 - n * meanX * meanX);
+            const intercept = meanY - slope * meanX;
+            let ssTot = 0, ssRes = 0;
+            for (let i = 0; i < n; i++) {
+                ssTot += (yArr[i] - meanY) ** 2;
+                ssRes += (yArr[i] - (intercept + slope * xArr[i])) ** 2;
+            }
+            const r2 = 1 - (ssRes / ssTot);
+            return { slope, intercept, r2 };
+        }
+
+        // Build dataset
+        function getData(featureIdx) {
+            const x = raw.map(row => row[featureIdx]);
+            const y = raw.map(row => row[2]);
+            const { slope, intercept, r2 } = calcRegression(x, y);
+            return { x, y, slope, intercept, r2 };
+        }
+
+        // Chart instance
+        let chart = null;
+
+        function render() {
+            const featureIdx = parseInt(featureSelect.value);
+            const { x, y, slope, intercept, r2 } = getData(featureIdx);
+            const zoom = parseFloat(zoomSlider.value);
+            const showPoints = showPointsCb.checked;
+            const showLine = showLineCb.checked;
+
+            // Update UI
+            nDisplay.textContent = x.length;
+            r2Display.textContent = r2.toFixed(4);
+            r2Inline.textContent = `R² ${r2.toFixed(4)}`;
+            eqText.innerHTML = `y = ${slope.toFixed(4)}·x + ${intercept.toFixed(4)}`;
+
+            // Prepare data
+            const scatterData = x.map((xi, i) => ({ x: xi, y: y[i] }));
+
+            // Build regression line points
+            const xMin = Math.min(...x) - 0.5;
+            const xMax = Math.max(...x) + 0.5;
+            const lineData = [
+                { x: xMin, y: slope * xMin + intercept },
+                { x: xMax, y: slope * xMax + intercept }
+            ];
+
+            // Destroy old chart
+            if (chart) {
+                chart.destroy();
+                chart = null;
+            }
+
+            // Datasets
+            const datasets = [];
+
+            // Points
+            if (showPoints) {
+                datasets.push({
+                    label: `Exam score vs ${featureIdx === 0 ? 'Hours_1' : 'Hours_2'}`,
+                    data: scatterData,
+                    backgroundColor: '#4db8ff',
+                    borderColor: '#1f6f9e',
+                    borderWidth: 1.2,
+                    pointRadius: 6,
+                    pointHoverRadius: 10,
+                    showLine: false,
+                    order: 1
+                });
+            }
+
+            // Regression line
+            if (showLine) {
+                datasets.push({
+                    label: 'Regression line',
+                    data: lineData,
+                    type: 'line',
+                    borderColor: '#f7b731',
+                    borderWidth: 4,
+                    pointRadius: 0,
+                    fill: false,
+                    tension: 0,
+                    order: 0,
+                    showLine: true,
+                    backgroundColor: 'transparent'
+                });
+            }
+
+            // Create chart
+            chart = new Chart(ctx, {
+                type: 'scatter',
+                data: { datasets },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#cde0ef',
+                                font: { size: 12, weight: '500' }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => {
+                                    if (ctx.dataset.label === 'Regression line') return '';
+                                    const rawPt = ctx.raw;
+                                    return `( ${rawPt.x.toFixed(2)} , ${rawPt.y.toFixed(2)} )`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            type: 'linear',
+                            title: {
+                                display: true,
+                                text: featureIdx === 0 ? 'Hours_1' : 'Hours_2',
+                                color: '#9cbdd6',
+                                font: { size: 13, weight: '500' }
+                            },
+                            grid: { color: 'rgba(255,255,255,0.05)' },
+                            ticks: { color: '#acc6db' },
+                            min: 0.5 * zoom,
+                            max: 10.5 * zoom,
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Exam score',
+                                color: '#9cbdd6',
+                                font: { size: 13, weight: '500' }
+                            },
+                            grid: { color: 'rgba(255,255,255,0.05)' },
+                            ticks: { color: '#acc6db' },
+                            min: 30 * zoom,
+                            max: 105 * zoom,
+                        }
+                    }
+                }
+            });
+        }
+
+        // Event listeners
+        featureSelect.addEventListener('change', render);
+        zoomSlider.addEventListener('input', function() {
+            zoomVal.textContent = this.value;
+            render();
+        });
+        showPointsCb.addEventListener('change', render);
+        showLineCb.addEventListener('change', render);
+
+        // Initial render
+        render();
+
+        // Expose for debugging
+        window.__reg = { raw, render };
+    })();
+</script>
+</body>
+</html>

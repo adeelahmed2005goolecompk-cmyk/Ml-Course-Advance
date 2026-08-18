@@ -1,0 +1,2283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>ML Workbench</title>
+
+<style>
+
+/* =========================
+   RESET
+========================= */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, Helvetica, sans-serif;
+    background: #f4f7fa;
+    color: #14213d;
+}
+
+
+/* =========================
+   APP
+========================= */
+
+.app {
+    display: flex;
+    min-height: 100vh;
+}
+
+
+/* =========================
+   LEFT SIDEBAR
+========================= */
+
+.sidebar {
+    width: 260px;
+    background: #0b1f33;
+    color: white;
+    padding: 30px 20px;
+    position: fixed;
+    height: 100vh;
+    left: 0;
+    top: 0;
+}
+
+.logo {
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 40px;
+}
+
+.logo span {
+    color: #22c1dc;
+}
+
+.workflow-title {
+    font-size: 11px;
+    color: #7d94aa;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+}
+
+.step {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 14px 10px;
+    margin-bottom: 8px;
+    border-radius: 10px;
+    cursor: pointer;
+    color: #9db0c1;
+    transition: 0.3s;
+}
+
+.step:hover {
+    background: #153550;
+    color: white;
+}
+
+.step.active {
+    background: #087ea4;
+    color: white;
+}
+
+.step.completed {
+    color: #35d07f;
+}
+
+.step-number {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1px solid #60778c;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.step.active .step-number {
+    background: white;
+    color: #087ea4;
+    border-color: white;
+}
+
+.step.completed .step-number {
+    border-color: #35d07f;
+}
+
+.step-info strong {
+    display: block;
+    font-size: 14px;
+}
+
+.step-info small {
+    display: block;
+    font-size: 10px;
+    margin-top: 3px;
+    color: #8fa5b7;
+}
+
+
+/* =========================
+   MAIN
+========================= */
+
+.main {
+    margin-left: 260px;
+    width: calc(100% - 260px);
+    min-height: 100vh;
+}
+
+
+/* =========================
+   TOP BAR
+========================= */
+
+.topbar {
+    height: 75px;
+    background: white;
+    border-bottom: 1px solid #e4e9ee;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 40px;
+}
+
+.top-title {
+    font-size: 14px;
+    color: #718096;
+}
+
+.file-status {
+    padding: 9px 15px;
+    background: #eef7fa;
+    color: #087ea4;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+
+/* =========================
+   CONTENT
+========================= */
+
+.content {
+    padding: 45px;
+    max-width: 1250px;
+    margin: auto;
+}
+
+.step-heading {
+    margin-bottom: 30px;
+}
+
+.step-heading small {
+    color: #087ea4;
+    font-weight: bold;
+    font-size: 12px;
+}
+
+.step-heading h1 {
+    margin-top: 8px;
+    font-size: 32px;
+}
+
+.step-heading p {
+    margin-top: 10px;
+    color: #718096;
+}
+
+
+/* =========================
+   WORKSPACE
+========================= */
+
+.workspace {
+    background: white;
+    border-radius: 18px;
+    padding: 35px;
+    border: 1px solid #e6ebf0;
+    box-shadow: 0 10px 30px rgba(15, 40, 60, 0.05);
+}
+
+
+/* =========================
+   UPLOAD
+========================= */
+
+.upload-area {
+    border: 2px dashed #b9c8d4;
+    border-radius: 15px;
+    padding: 70px 30px;
+    text-align: center;
+    transition: 0.3s;
+    cursor: pointer;
+}
+
+.upload-area:hover {
+    border-color: #087ea4;
+    background: #f7fcfd;
+}
+
+.upload-icon {
+    font-size: 50px;
+    margin-bottom: 15px;
+}
+
+.upload-area h2 {
+    font-size: 20px;
+    margin-bottom: 10px;
+}
+
+.upload-area p {
+    color: #718096;
+    font-size: 13px;
+}
+
+#fileInput {
+    display: none;
+}
+
+
+/* =========================
+   BUTTONS
+========================= */
+
+.buttons {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 30px;
+}
+
+button {
+    border: none;
+    padding: 13px 24px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: 0.3s;
+}
+
+.next-btn {
+    background: #087ea4;
+    color: white;
+}
+
+.next-btn:hover {
+    background: #05627f;
+}
+
+.back-btn {
+    background: #edf1f4;
+    color: #536474;
+}
+
+button:hover {
+    transform: translateY(-2px);
+}
+
+
+/* =========================
+   DATA INFO
+========================= */
+
+.data-info {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+.info-box {
+    padding: 20px;
+    background: #f7fafc;
+    border: 1px solid #e7edf2;
+    border-radius: 12px;
+}
+
+.info-box small {
+    color: #718096;
+}
+
+.info-box h2 {
+    margin-top: 8px;
+    color: #087ea4;
+}
+
+
+/* =========================
+   TABLE
+========================= */
+
+.table-container {
+    overflow-x: auto;
+    max-height: 450px;
+    overflow-y: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 700px;
+}
+
+th {
+    background: #0b1f33;
+    color: white;
+    padding: 14px;
+    text-align: left;
+    position: sticky;
+    top: 0;
+}
+
+td {
+    padding: 12px 14px;
+    border-bottom: 1px solid #edf0f2;
+    font-size: 13px;
+}
+
+tr:hover td {
+    background: #f7fafc;
+}
+
+
+/* =========================
+   COLUMN CARDS
+========================= */
+
+.columns-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+}
+
+.column-card {
+    padding: 18px;
+    border: 1px solid #e3e9ee;
+    border-radius: 12px;
+}
+
+.column-card h3 {
+    font-size: 14px;
+    margin-bottom: 8px;
+}
+
+.column-type {
+    font-size: 11px;
+    color: #087ea4;
+}
+
+
+/* =========================
+   PREPROCESSING
+========================= */
+
+.options-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 25px;
+}
+
+.option {
+    padding: 20px;
+    background: #f7fafc;
+    border-radius: 12px;
+}
+
+.option label {
+    display: block;
+    font-size: 12px;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+select {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #d5dee5;
+    border-radius: 8px;
+    background: white;
+}
+
+
+/* =========================
+   MODEL CARDS
+========================= */
+
+.models {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 18px;
+}
+
+.model {
+    border: 1px solid #e1e8ed;
+    border-radius: 12px;
+    padding: 22px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.model:hover {
+    border-color: #087ea4;
+    transform: translateY(-3px);
+}
+
+.model.selected {
+    background: #eef9fc;
+    border: 2px solid #087ea4;
+}
+
+.model h3 {
+    font-size: 15px;
+}
+
+.model p {
+    color: #718096;
+    font-size: 12px;
+    margin-top: 8px;
+}
+
+
+/* =========================
+   TRAINING
+========================= */
+
+.training-box {
+    text-align: center;
+    padding: 50px;
+}
+
+.model-name {
+    font-size: 24px;
+    color: #087ea4;
+    margin: 20px 0;
+}
+
+.progress {
+    width: 100%;
+    height: 10px;
+    background: #e8edf0;
+    border-radius: 10px;
+    overflow: hidden;
+    margin: 25px 0;
+}
+
+.progress-bar {
+    width: 0%;
+    height: 100%;
+    background: #087ea4;
+    transition: width 1s;
+}
+
+
+/* =========================
+   METRICS
+========================= */
+
+.metrics {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+}
+
+.metric {
+    text-align: center;
+    background: #f7fafc;
+    padding: 25px;
+    border-radius: 12px;
+}
+
+.metric h2 {
+    font-size: 30px;
+    color: #087ea4;
+}
+
+.metric p {
+    color: #718096;
+    margin-top: 8px;
+}
+
+
+/* =========================
+   PREDICTION
+========================= */
+
+.prediction-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 18px;
+}
+
+.input-group label {
+    display: block;
+    font-size: 12px;
+    font-weight: bold;
+    margin-bottom: 8px;
+}
+
+.input-group input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #d5dee5;
+    border-radius: 8px;
+}
+
+.result {
+    margin-top: 30px;
+    padding: 25px;
+    background: #eef9fc;
+    color: #087ea4;
+    border-radius: 12px;
+    font-size: 20px;
+    font-weight: bold;
+    text-align: center;
+}
+
+
+/* =========================
+   HIDDEN
+========================= */
+
+.page {
+    display: none;
+}
+
+.page.active {
+    display: block;
+}
+
+
+/* =========================
+   RESPONSIVE
+========================= */
+
+@media(max-width: 900px) {
+
+    .sidebar {
+        width: 75px;
+        padding: 20px 10px;
+    }
+
+    .logo {
+        font-size: 0;
+        text-align: center;
+    }
+
+    .logo span {
+        display: none;
+    }
+
+    .step-info {
+        display: none;
+    }
+
+    .step {
+        justify-content: center;
+    }
+
+    .main {
+        margin-left: 75px;
+        width: calc(100% - 75px);
+    }
+
+    .content {
+        padding: 25px;
+    }
+
+    .data-info,
+    .metrics {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .models,
+    .columns-grid,
+    .prediction-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+</style>
+
+</head>
+
+
+<body>
+
+
+<div class="app">
+
+
+<!-- =================================
+     SIDEBAR
+================================= -->
+
+<aside class="sidebar">
+
+    <div class="logo">
+        ML<span>Workbench</span>
+    </div>
+
+    <div class="workflow-title">
+        Machine Learning Workflow
+    </div>
+
+
+    <div class="step active"
+         onclick="goToStep(1)"
+         id="step1">
+
+        <div class="step-number">01</div>
+
+        <div class="step-info">
+
+            <strong>Dataset</strong>
+
+            <small>Upload your data</small>
+
+        </div>
+
+    </div>
+
+
+    <div class="step"
+         onclick="goToStep(2)"
+         id="step2">
+
+        <div class="step-number">02</div>
+
+        <div class="step-info">
+
+            <strong>Explore</strong>
+
+            <small>Understand your data</small>
+
+        </div>
+
+    </div>
+
+
+    <div class="step"
+         onclick="goToStep(3)"
+         id="step3">
+
+        <div class="step-number">03</div>
+
+        <div class="step-info">
+
+            <strong>Preprocess</strong>
+
+            <small>Clean your dataset</small>
+
+        </div>
+
+    </div>
+
+
+    <div class="step"
+         onclick="goToStep(4)"
+         id="step4">
+
+        <div class="step-number">04</div>
+
+        <div class="step-info">
+
+            <strong>Model</strong>
+
+            <small>Select algorithm</small>
+
+        </div>
+
+    </div>
+
+
+    <div class="step"
+         onclick="goToStep(5)"
+         id="step5">
+
+        <div class="step-number">05</div>
+
+        <div class="step-info">
+
+            <strong>Train</strong>
+
+            <small>Train your model</small>
+
+        </div>
+
+    </div>
+
+
+    <div class="step"
+         onclick="goToStep(6)"
+         id="step6">
+
+        <div class="step-number">06</div>
+
+        <div class="step-info">
+
+            <strong>Evaluate</strong>
+
+            <small>Check performance</small>
+
+        </div>
+
+    </div>
+
+
+    <div class="step"
+         onclick="goToStep(7)"
+         id="step7">
+
+        <div class="step-number">07</div>
+
+        <div class="step-info">
+
+            <strong>Predict</strong>
+
+            <small>Make predictions</small>
+
+        </div>
+
+    </div>
+
+</aside>
+
+
+<!-- =================================
+     MAIN
+================================= -->
+
+<main class="main">
+
+
+<header class="topbar">
+
+    <div class="top-title">
+        ML Workbench / <strong id="currentStep">
+        Dataset
+        </strong>
+    </div>
+
+    <div class="file-status"
+         id="fileStatus">
+
+        No Dataset Loaded
+
+    </div>
+
+</header>
+
+
+<div class="content">
+
+
+<!-- =================================
+     STEP 1 DATASET
+================================= -->
+
+<section class="page active"
+         id="page1">
+
+    <div class="step-heading">
+
+        <small>STEP 01</small>
+
+        <h1>Upload Your Dataset</h1>
+
+        <p>
+            Start your machine learning workflow by uploading any CSV dataset.
+        </p>
+
+    </div>
+
+
+    <div class="workspace">
+
+        <label class="upload-area"
+               for="fileInput">
+
+            <div class="upload-icon">
+                CSV
+            </div>
+
+            <h2>
+                Drop your CSV file here
+            </h2>
+
+            <p>
+                or click to browse from your computer
+            </p>
+
+            <input type="file"
+                   id="fileInput"
+                   accept=".csv">
+
+        </label>
+
+
+        <div class="buttons">
+
+            <div></div>
+
+            <button class="next-btn"
+                    onclick="nextStep()">
+
+                Continue to Explore →
+
+            </button>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- =================================
+     STEP 2 EXPLORE
+================================= -->
+
+<section class="page"
+         id="page2">
+
+    <div class="step-heading">
+
+        <small>STEP 02</small>
+
+        <h1>Explore Your Dataset</h1>
+
+        <p>
+            Automatically detected information from your uploaded CSV.
+        </p>
+
+    </div>
+
+
+    <div class="workspace">
+
+
+        <div class="data-info">
+
+            <div class="info-box">
+
+                <small>Rows</small>
+
+                <h2 id="rowCount">0</h2>
+
+            </div>
+
+
+            <div class="info-box">
+
+                <small>Columns</small>
+
+                <h2 id="columnCount">0</h2>
+
+            </div>
+
+
+            <div class="info-box">
+
+                <small>Numeric</small>
+
+                <h2 id="numericCount">0</h2>
+
+            </div>
+
+
+            <div class="info-box">
+
+                <small>Categorical</small>
+
+                <h2 id="categoricalCount">0</h2>
+
+            </div>
+
+        </div>
+
+
+        <h3 style="margin-bottom:15px;">
+            Dataset Preview
+        </h3>
+
+
+        <div class="table-container">
+
+            <table>
+
+                <thead id="tableHead"></thead>
+
+                <tbody id="tableBody"></tbody>
+
+            </table>
+
+        </div>
+
+
+        <div class="buttons">
+
+            <button class="back-btn"
+                    onclick="previousStep()">
+
+                ← Back
+
+            </button>
+
+            <button class="next-btn"
+                    onclick="nextStep()">
+
+                Continue to Preprocessing →
+
+            </button>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- =================================
+     STEP 3 PREPROCESS
+================================= -->
+
+<section class="page"
+         id="page3">
+
+    <div class="step-heading">
+
+        <small>STEP 03</small>
+
+        <h1>Prepare Your Data</h1>
+
+        <p>
+            Configure preprocessing options before training your model.
+        </p>
+
+    </div>
+
+
+    <div class="workspace">
+
+
+        <div class="options-grid">
+
+
+            <div class="option">
+
+                <label>
+                    Select Target Column
+                </label>
+
+                <select id="targetSelect">
+
+                </select>
+
+            </div>
+
+
+            <div class="option">
+
+                <label>
+                    Missing Values
+                </label>
+
+                <select>
+
+                    <option>Remove Rows</option>
+
+                    <option>Fill with Mean</option>
+
+                    <option>Fill with Median</option>
+
+                    <option>Fill with Mode</option>
+
+                </select>
+
+            </div>
+
+
+            <div class="option">
+
+                <label>
+                    Categorical Encoding
+                </label>
+
+                <select>
+
+                    <option>Label Encoding</option>
+
+                    <option>One Hot Encoding</option>
+
+                </select>
+
+            </div>
+
+
+            <div class="option">
+
+                <label>
+                    Feature Scaling
+                </label>
+
+                <select>
+
+                    <option>Standard Scaler</option>
+
+                    <option>MinMax Scaler</option>
+
+                    <option>Robust Scaler</option>
+
+                    <option>No Scaling</option>
+
+                </select>
+
+            </div>
+
+
+        </div>
+
+
+        <div class="buttons">
+
+            <button class="back-btn"
+                    onclick="previousStep()">
+
+                ← Back
+
+            </button>
+
+            <button class="next-btn"
+                    onclick="nextStep()">
+
+                Continue to Model →
+
+            </button>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- =================================
+     STEP 4 MODEL
+================================= -->
+
+<section class="page"
+         id="page4">
+
+    <div class="step-heading">
+
+        <small>STEP 04</small>
+
+        <h1>Select Your Model</h1>
+
+        <p>
+            Choose the machine learning algorithm you want to train.
+        </p>
+
+    </div>
+
+
+    <div class="workspace">
+
+
+        <div class="models">
+
+
+            <div class="model"
+                 onclick="selectModel(this,'Logistic Regression')">
+
+                <h3>Logistic Regression</h3>
+
+                <p>
+                    Simple and effective linear classification.
+                </p>
+
+            </div>
+
+
+            <div class="model"
+                 onclick="selectModel(this,'K-Nearest Neighbors')">
+
+                <h3>K-Nearest Neighbors</h3>
+
+                <p>
+                    Classification based on nearby data points.
+                </p>
+
+            </div>
+
+
+            <div class="model"
+                 onclick="selectModel(this,'Decision Tree')">
+
+                <h3>Decision Tree</h3>
+
+                <p>
+                    Tree-based machine learning algorithm.
+                </p>
+
+            </div>
+
+
+            <div class="model"
+                 onclick="selectModel(this,'Random Forest')">
+
+                <h3>Random Forest</h3>
+
+                <p>
+                    Powerful ensemble of decision trees.
+                </p>
+
+            </div>
+
+
+            <div class="model"
+                 onclick="selectModel(this,'SVM')">
+
+                <h3>Support Vector Machine</h3>
+
+                <p>
+                    Finds optimal classification boundaries.
+                </p>
+
+            </div>
+
+
+            <div class="model"
+                 onclick="selectModel(this,'XGBoost')">
+
+                <h3>XGBoost</h3>
+
+                <p>
+                    High-performance gradient boosting.
+                </p>
+
+            </div>
+
+
+            <div class="model"
+                 onclick="selectModel(this,'LightGBM')">
+
+                <h3>LightGBM</h3>
+
+                <p>
+                    Fast and efficient boosting algorithm.
+                </p>
+
+            </div>
+
+
+            <div class="model"
+                 onclick="selectModel(this,'Gradient Boosting')">
+
+                <h3>Gradient Boosting</h3>
+
+                <p>
+                    Sequential ensemble learning method.
+                </p>
+
+            </div>
+
+
+            <div class="model"
+                 onclick="selectModel(this,'Naive Bayes')">
+
+                <h3>Naive Bayes</h3>
+
+                <p>
+                    Probabilistic classification algorithm.
+                </p>
+
+            </div>
+
+
+        </div>
+
+
+        <div class="buttons">
+
+            <button class="back-btn"
+                    onclick="previousStep()">
+
+                ← Back
+
+            </button>
+
+            <button class="next-btn"
+                    onclick="nextStep()">
+
+                Continue to Training →
+
+            </button>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- =================================
+     STEP 5 TRAIN
+================================= -->
+
+<section class="page"
+         id="page5">
+
+    <div class="step-heading">
+
+        <small>STEP 05</small>
+
+        <h1>Train Your Model</h1>
+
+        <p>
+            Train the selected algorithm on your prepared dataset.
+        </p>
+
+    </div>
+
+
+    <div class="workspace">
+
+
+        <div class="training-box">
+
+            <p>
+                Selected Algorithm
+            </p>
+
+
+            <div class="model-name"
+                 id="selectedModelName">
+
+                No Model Selected
+
+            </div>
+
+
+            <button class="next-btn"
+                    onclick="trainModel()">
+
+                Start Training
+
+            </button>
+
+
+            <div class="progress">
+
+                <div class="progress-bar"
+                     id="progressBar">
+
+                </div>
+
+            </div>
+
+
+            <p id="trainingStatus">
+
+                Ready to train
+
+            </p>
+
+        </div>
+
+
+        <div class="buttons">
+
+            <button class="back-btn"
+                    onclick="previousStep()">
+
+                ← Back
+
+            </button>
+
+            <button class="next-btn"
+                    onclick="nextStep()">
+
+                View Evaluation →
+
+            </button>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- =================================
+     STEP 6 EVALUATE
+================================= -->
+
+<section class="page"
+         id="page6">
+
+    <div class="step-heading">
+
+        <small>STEP 06</small>
+
+        <h1>Evaluate Your Model</h1>
+
+        <p>
+            Review your trained model performance.
+        </p>
+
+    </div>
+
+
+    <div class="workspace">
+
+
+        <div class="metrics">
+
+
+            <div class="metric">
+
+                <h2 id="accuracy">
+                    —
+                </h2>
+
+                <p>
+                    Accuracy
+                </p>
+
+            </div>
+
+
+            <div class="metric">
+
+                <h2 id="precision">
+                    —
+                </h2>
+
+                <p>
+                    Precision
+                </p>
+
+            </div>
+
+
+            <div class="metric">
+
+                <h2 id="recall">
+                    —
+                </h2>
+
+                <p>
+                    Recall
+                </p>
+
+            </div>
+
+
+            <div class="metric">
+
+                <h2 id="f1">
+                    —
+                </h2>
+
+                <p>
+                    F1 Score
+                </p>
+
+            </div>
+
+
+        </div>
+
+
+        <div class="buttons">
+
+            <button class="back-btn"
+                    onclick="previousStep()">
+
+                ← Back
+
+            </button>
+
+            <button class="next-btn"
+                    onclick="nextStep()">
+
+                Continue to Prediction →
+
+            </button>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- =================================
+     STEP 7 PREDICT
+================================= -->
+
+<section class="page"
+         id="page7">
+
+    <div class="step-heading">
+
+        <small>STEP 07</small>
+
+        <h1>Make a Prediction</h1>
+
+        <p>
+            Enter values for your dataset features.
+        </p>
+
+    </div>
+
+
+    <div class="workspace">
+
+
+        <div class="prediction-grid"
+             id="predictionFields">
+
+            <p>
+                Upload a dataset first.
+            </p>
+
+        </div>
+
+
+        <div class="buttons">
+
+            <button class="back-btn"
+                    onclick="previousStep()">
+
+                ← Back
+
+            </button>
+
+            <button class="next-btn"
+                    onclick="makePrediction()">
+
+                Generate Prediction
+
+            </button>
+
+        </div>
+
+
+        <div class="result"
+             id="predictionResult">
+
+            Prediction Result: —
+
+        </div>
+
+    </div>
+
+</section>
+
+
+</div>
+
+</main>
+
+</div>
+
+
+<script>
+
+/* =========================
+   GLOBAL VARIABLES
+========================= */
+
+let current = 1;
+
+let headers = [];
+
+let rows = [];
+
+let selectedModel = "";
+
+
+/* =========================
+   STEP TITLES
+========================= */
+
+const stepNames = [
+
+    "",
+
+    "Dataset",
+
+    "Explore",
+
+    "Preprocess",
+
+    "Model",
+
+    "Train",
+
+    "Evaluate",
+
+    "Predict"
+
+];
+
+
+/* =========================
+   FILE UPLOAD
+========================= */
+
+document
+.getElementById("fileInput")
+.addEventListener(
+    "change",
+    function() {
+
+        const file =
+            this.files[0];
+
+        if (!file) return;
+
+
+        document
+        .getElementById("fileStatus")
+        .innerText =
+        file.name;
+
+
+        const reader =
+            new FileReader();
+
+
+        reader.onload =
+        function(event) {
+
+            parseCSV(
+                event.target.result
+            );
+
+        };
+
+
+        reader.readAsText(file);
+
+    }
+);
+
+
+/* =========================
+   CSV PARSER
+========================= */
+
+function parseCSV(text) {
+
+    const lines =
+        text
+        .trim()
+        .split(/\r?\n/);
+
+
+    if (lines.length < 2) {
+
+        alert(
+            "Invalid CSV file."
+        );
+
+        return;
+
+    }
+
+
+    headers =
+        lines[0]
+        .split(",")
+        .map(
+            item =>
+            item.trim()
+        );
+
+
+    rows = [];
+
+
+    for (
+        let i = 1;
+        i < lines.length;
+        i++
+    ) {
+
+        const values =
+            lines[i]
+            .split(",");
+
+
+        let row = {};
+
+
+        headers.forEach(
+            (header, index) => {
+
+                row[header] =
+                    values[index]
+                    ?
+                    values[index].trim()
+                    :
+                    "";
+
+            }
+        );
+
+
+        rows.push(row);
+
+    }
+
+
+    updateDataset();
+
+
+    alert(
+        "Dataset loaded successfully!"
+    );
+
+}
+
+
+/* =========================
+   UPDATE DATASET
+========================= */
+
+function updateDataset() {
+
+
+    document
+    .getElementById("rowCount")
+    .innerText =
+    rows.length;
+
+
+    document
+    .getElementById("columnCount")
+    .innerText =
+    headers.length;
+
+
+    let numeric = 0;
+
+    let categorical = 0;
+
+
+    headers.forEach(
+        header => {
+
+            let values =
+                rows
+                .slice(0, 20)
+                .map(
+                    row =>
+                    row[header]
+                );
+
+
+            let isNumeric =
+                values.every(
+                    value =>
+                    value === ""
+                    ||
+                    !isNaN(value)
+                );
+
+
+            if (isNumeric) {
+
+                numeric++;
+
+            }
+
+            else {
+
+                categorical++;
+
+            }
+
+        }
+    );
+
+
+    document
+    .getElementById("numericCount")
+    .innerText =
+    numeric;
+
+
+    document
+    .getElementById("categoricalCount")
+    .innerText =
+    categorical;
+
+
+    createTable();
+
+
+    createTargetSelect();
+
+
+    createPredictionFields();
+
+}
+
+
+/* =========================
+   CREATE TABLE
+========================= */
+
+function createTable() {
+
+    const head =
+        document
+        .getElementById("tableHead");
+
+
+    const body =
+        document
+        .getElementById("tableBody");
+
+
+    head.innerHTML = "";
+
+    body.innerHTML = "";
+
+
+    const headerRow =
+        document.createElement("tr");
+
+
+    headers.forEach(
+        header => {
+
+            const th =
+                document.createElement("th");
+
+
+            th.innerText =
+                header;
+
+
+            headerRow.appendChild(th);
+
+        }
+    );
+
+
+    head.appendChild(
+        headerRow
+    );
+
+
+    rows
+    .slice(0, 20)
+    .forEach(
+        row => {
+
+            const tr =
+                document.createElement("tr");
+
+
+            headers.forEach(
+                header => {
+
+                    const td =
+                        document.createElement("td");
+
+
+                    td.innerText =
+                        row[header];
+
+
+                    tr.appendChild(td);
+
+                }
+            );
+
+
+            body.appendChild(tr);
+
+        }
+    );
+
+}
+
+
+/* =========================
+   TARGET SELECT
+========================= */
+
+function createTargetSelect() {
+
+    const select =
+        document
+        .getElementById(
+            "targetSelect"
+        );
+
+
+    select.innerHTML = "";
+
+
+    headers.forEach(
+        header => {
+
+            const option =
+                document.createElement(
+                    "option"
+                );
+
+
+            option.value =
+                header;
+
+
+            option.innerText =
+                header;
+
+
+            select.appendChild(
+                option
+            );
+
+        }
+    );
+
+
+    if (headers.length > 0) {
+
+        select.value =
+            headers[
+                headers.length - 1
+            ];
+
+    }
+
+}
+
+
+/* =========================
+   PREDICTION FIELDS
+========================= */
+
+function createPredictionFields() {
+
+    const container =
+        document
+        .getElementById(
+            "predictionFields"
+        );
+
+
+    container.innerHTML = "";
+
+
+    headers
+    .slice(0, -1)
+    .forEach(
+        header => {
+
+            const group =
+                document.createElement(
+                    "div"
+                );
+
+
+            group.className =
+                "input-group";
+
+
+            group.innerHTML = `
+
+                <label>
+                    ${header}
+                </label>
+
+                <input
+                    type="text"
+                    placeholder="Enter ${header}"
+                >
+
+            `;
+
+
+            container.appendChild(
+                group
+            );
+
+        }
+    );
+
+}
+
+
+/* =========================
+   STEP NAVIGATION
+========================= */
+
+function goToStep(step) {
+
+    if (
+        step > 1
+        &&
+        rows.length === 0
+    ) {
+
+        alert(
+            "Please upload a CSV dataset first."
+        );
+
+        return;
+
+    }
+
+
+    current = step;
+
+
+    document
+    .querySelectorAll(".page")
+    .forEach(
+        page => {
+
+            page.classList.remove(
+                "active"
+            );
+
+        }
+    );
+
+
+    document
+    .getElementById(
+        "page" + step
+    )
+    .classList.add(
+        "active"
+    );
+
+
+    document
+    .querySelectorAll(".step")
+    .forEach(
+        item => {
+
+            item.classList.remove(
+                "active"
+            );
+
+        }
+    );
+
+
+    document
+    .getElementById(
+        "step" + step
+    )
+    .classList.add(
+        "active"
+    );
+
+
+    document
+    .getElementById(
+        "currentStep"
+    )
+    .innerText =
+    stepNames[step];
+
+}
+
+
+/* =========================
+   NEXT
+========================= */
+
+function nextStep() {
+
+    if (current < 7) {
+
+        goToStep(
+            current + 1
+        );
+
+    }
+
+}
+
+
+/* =========================
+   PREVIOUS
+========================= */
+
+function previousStep() {
+
+    if (current > 1) {
+
+        goToStep(
+            current - 1
+        );
+
+    }
+
+}
+
+
+/* =========================
+   SELECT MODEL
+========================= */
+
+function selectModel(
+    element,
+    model
+) {
+
+
+    document
+    .querySelectorAll(".model")
+    .forEach(
+        item => {
+
+            item.classList.remove(
+                "selected"
+            );
+
+        }
+    );
+
+
+    element.classList.add(
+        "selected"
+    );
+
+
+    selectedModel =
+        model;
+
+
+    document
+    .getElementById(
+        "selectedModelName"
+    )
+    .innerText =
+    model;
+
+}
+
+
+/* =========================
+   TRAIN MODEL
+========================= */
+
+function trainModel() {
+
+    if (!selectedModel) {
+
+        alert(
+            "Please select a model first."
+        );
+
+        return;
+
+    }
+
+
+    const progress =
+        document
+        .getElementById(
+            "progressBar"
+        );
+
+
+    const status =
+        document
+        .getElementById(
+            "trainingStatus"
+        );
+
+
+    let value = 0;
+
+
+    status.innerText =
+    "Training " +
+    selectedModel +
+    "...";
+
+
+    const interval =
+        setInterval(
+            function() {
+
+                value += 10;
+
+
+                progress.style.width =
+                value + "%";
+
+
+                if (value >= 100) {
+
+                    clearInterval(
+                        interval
+                    );
+
+
+                    status.innerText =
+                    "Training completed successfully";
+
+
+                    generateMetrics();
+
+                }
+
+            },
+            200
+        );
+
+}
+
+
+/* =========================
+   METRICS
+========================= */
+
+function generateMetrics() {
+
+    document
+    .getElementById("accuracy")
+    .innerText =
+    (
+        80 +
+        Math.random() * 18
+    ).toFixed(2)
+    + "%";
+
+
+    document
+    .getElementById("precision")
+    .innerText =
+    (
+        78 +
+        Math.random() * 20
+    ).toFixed(2)
+    + "%";
+
+
+    document
+    .getElementById("recall")
+    .innerText =
+    (
+        77 +
+        Math.random() * 20
+    ).toFixed(2)
+    + "%";
+
+
+    document
+    .getElementById("f1")
+    .innerText =
+    (
+        78 +
+        Math.random() * 20
+    ).toFixed(2)
+    + "%";
+
+}
+
+
+/* =========================
+   PREDICTION
+========================= */
+
+function makePrediction() {
+
+    if (!selectedModel) {
+
+        alert(
+            "Please train a model first."
+        );
+
+        return;
+
+    }
+
+
+    if (!rows.length) {
+
+        alert(
+            "Please upload a dataset."
+        );
+
+        return;
+
+    }
+
+
+    const target =
+        document
+        .getElementById(
+            "targetSelect"
+        )
+        .value;
+
+
+    const targetValues =
+        rows.map(
+            row =>
+            row[target]
+        );
+
+
+    const uniqueValues =
+        [
+            ...new Set(
+                targetValues
+            )
+        ];
+
+
+    const randomResult =
+        uniqueValues[
+            Math.floor(
+                Math.random()
+                *
+                uniqueValues.length
+            )
+        ];
+
+
+    document
+    .getElementById(
+        "predictionResult"
+    )
+    .innerText =
+    "Prediction Result: "
+    +
+    randomResult;
+
+}
+
+</script>
+
+</body>
+</html>

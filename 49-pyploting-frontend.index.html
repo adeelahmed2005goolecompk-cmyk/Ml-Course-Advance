@@ -1,0 +1,1257 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Sales & Business Analytics Dashboard</title>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f7fb;
+            color: #1f2937;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 240px;
+            height: 100vh;
+            background: #111827;
+            color: white;
+            padding: 25px 18px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 40px;
+        }
+
+        .logo-icon {
+            width: 45px;
+            height: 45px;
+            background: #2563eb;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .logo h2 {
+            font-size: 17px;
+        }
+
+        .logo p {
+            color: #9ca3af;
+            font-size: 11px;
+            margin-top: 4px;
+        }
+
+        .sidebar nav a {
+            display: block;
+            color: #d1d5db;
+            text-decoration: none;
+            padding: 13px 15px;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            transition: 0.3s;
+        }
+
+        .sidebar nav a:hover,
+        .sidebar nav a.active {
+            background: #2563eb;
+            color: white;
+        }
+
+        .sidebar-footer {
+            position: absolute;
+            bottom: 25px;
+            color: #9ca3af;
+            font-size: 12px;
+        }
+
+        /* Main */
+        .main {
+            margin-left: 240px;
+            padding: 30px;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 30px;
+            color: #111827;
+        }
+
+        .header p {
+            margin-top: 8px;
+            color: #6b7280;
+        }
+
+        .download-btn {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 13px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .download-btn:hover {
+            background: #1d4ed8;
+        }
+
+        /* KPI Cards */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        .kpi-card {
+            background: white;
+            padding: 22px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+            border-left: 4px solid #2563eb;
+        }
+
+        .kpi-card h3 {
+            color: #6b7280;
+            font-size: 13px;
+            margin-bottom: 12px;
+        }
+
+        .kpi-card h2 {
+            font-size: 28px;
+            color: #111827;
+        }
+
+        .kpi-card p {
+            color: #9ca3af;
+            font-size: 12px;
+            margin-top: 7px;
+        }
+
+        /* Charts */
+        .chart-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        .chart-card {
+            background: white;
+            padding: 22px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+        }
+
+        .chart-card.full {
+            grid-column: span 2;
+        }
+
+        .chart-card h2 {
+            font-size: 18px;
+            margin-bottom: 5px;
+        }
+
+        .chart-card .description {
+            color: #9ca3af;
+            font-size: 12px;
+            margin-bottom: 20px;
+        }
+
+        .chart-box {
+            height: 320px;
+        }
+
+        /* Dashboard */
+        .section-title {
+            margin: 40px 0 20px;
+        }
+
+        .section-title h2 {
+            font-size: 25px;
+        }
+
+        .section-title p {
+            color: #6b7280;
+            margin-top: 5px;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+
+        .dashboard-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            height: 360px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+        }
+
+        .dashboard-card h3 {
+            margin-bottom: 15px;
+        }
+
+        /* Analysis */
+        .analysis-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 15px;
+        }
+
+        .analysis-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+
+        .analysis-card h3 {
+            font-size: 13px;
+            color: #6b7280;
+            margin-bottom: 12px;
+        }
+
+        .analysis-card p {
+            font-size: 18px;
+            font-weight: bold;
+            color: #111827;
+        }
+
+        .observations {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            margin-top: 20px;
+        }
+
+        .observations h2 {
+            margin-bottom: 15px;
+        }
+
+        .observations li {
+            margin: 10px 0;
+            color: #4b5563;
+        }
+
+        /* Footer */
+        footer {
+            margin-top: 50px;
+            padding: 25px;
+            text-align: center;
+            color: #6b7280;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        /* Responsive */
+        @media (max-width: 1100px) {
+            .kpi-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .analysis-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 800px) {
+            .sidebar {
+                position: relative;
+                width: 100%;
+                height: auto;
+            }
+
+            .sidebar-footer {
+                display: none;
+            }
+
+            .main {
+                margin-left: 0;
+            }
+
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 20px;
+            }
+
+            .chart-grid,
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .chart-card.full {
+                grid-column: span 1;
+            }
+        }
+
+        @media (max-width: 500px) {
+            .kpi-grid,
+            .analysis-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .main {
+                padding: 15px;
+            }
+
+            .header h1 {
+                font-size: 23px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+
+    <div class="logo">
+        <div class="logo-icon">SA</div>
+
+        <div>
+            <h2>Sales Analytics</h2>
+            <p>Business Dashboard</p>
+        </div>
+    </div>
+
+    <nav>
+        <a href="#overview" class="active">Overview</a>
+        <a href="#charts">Sales Trends</a>
+        <a href="#comparison">Comparison</a>
+        <a href="#dashboard">Dashboard</a>
+        <a href="#analysis">Business Analysis</a>
+    </nav>
+
+    <div class="sidebar-footer">
+        Matplotlib Assignment<br>
+        Python Data Visualization
+    </div>
+
+</aside>
+
+
+<!-- MAIN CONTENT -->
+<main class="main">
+
+    <!-- HEADER -->
+    <header class="header">
+
+        <div>
+            <h1>Sales & Business Data Visualization</h1>
+
+            <p>
+                Analyze sales, profit, customers and advertising performance.
+            </p>
+        </div>
+
+        <button class="download-btn" onclick="downloadDashboard()">
+            Download Dashboard
+        </button>
+
+    </header>
+
+
+    <!-- KPI CARDS -->
+    <section id="overview" class="kpi-grid">
+
+        <div class="kpi-card">
+            <h3>Total Sales</h3>
+            <h2 id="totalSales">$331,000</h2>
+            <p>Annual sales revenue</p>
+        </div>
+
+        <div class="kpi-card">
+            <h3>Total Profit</h3>
+            <h2 id="totalProfit">$79,400</h2>
+            <p>Annual profit generated</p>
+        </div>
+
+        <div class="kpi-card">
+            <h3>Total Customers</h3>
+            <h2 id="totalCustomers">2,300</h2>
+            <p>Total customer count</p>
+        </div>
+
+        <div class="kpi-card">
+            <h3>Advertisement</h3>
+            <h2 id="totalAdvertisement">$27,000</h2>
+            <p>Total advertising cost</p>
+        </div>
+
+    </section>
+
+
+    <!-- MAIN CHARTS -->
+    <section id="charts" class="chart-grid">
+
+        <!-- SALES -->
+        <div class="chart-card">
+
+            <h2>Monthly Sales Trend</h2>
+
+            <p class="description">
+                Sales performance throughout the year
+            </p>
+
+            <div class="chart-box">
+                <canvas id="salesChart"></canvas>
+            </div>
+
+        </div>
+
+
+        <!-- PROFIT -->
+        <div class="chart-card">
+
+            <h2>Profit Trend</h2>
+
+            <p class="description">
+                Monthly profit performance
+            </p>
+
+            <div class="chart-box">
+                <canvas id="profitChart"></canvas>
+            </div>
+
+        </div>
+
+
+        <!-- CUSTOMERS -->
+        <div class="chart-card">
+
+            <h2>Customer Growth</h2>
+
+            <p class="description">
+                Monthly customer trend
+            </p>
+
+            <div class="chart-box">
+                <canvas id="customerChart"></canvas>
+            </div>
+
+        </div>
+
+
+        <!-- ADVERTISEMENT -->
+        <div class="chart-card">
+
+            <h2>Advertisement vs Sales</h2>
+
+            <p class="description">
+                Relationship between advertising and sales
+            </p>
+
+            <div class="chart-box">
+                <canvas id="advertisementChart"></canvas>
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- SALES VS CUSTOMERS -->
+    <section id="comparison" class="chart-card full">
+
+        <h2>Sales vs Customers</h2>
+
+        <p class="description">
+            Compare sales growth with customer growth
+        </p>
+
+        <div class="chart-box">
+            <canvas id="comparisonChart"></canvas>
+        </div>
+
+    </section>
+
+
+    <!-- 2 x 2 DASHBOARD -->
+    <section id="dashboard">
+
+        <div class="section-title">
+            <h2>Business Performance Dashboard</h2>
+            <p>Complete 2 × 2 visualization dashboard</p>
+        </div>
+
+        <div class="dashboard-grid">
+
+            <div class="dashboard-card">
+                <h3>Sales Trend</h3>
+                <canvas id="dashboardSales"></canvas>
+            </div>
+
+            <div class="dashboard-card">
+                <h3>Profit Trend</h3>
+                <canvas id="dashboardProfit"></canvas>
+            </div>
+
+            <div class="dashboard-card">
+                <h3>Advertisement vs Sales</h3>
+                <canvas id="dashboardAdvertisement"></canvas>
+            </div>
+
+            <div class="dashboard-card">
+                <h3>Customers Trend</h3>
+                <canvas id="dashboardCustomers"></canvas>
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- BUSINESS ANALYSIS -->
+    <section id="analysis">
+
+        <div class="section-title">
+            <h2>Business Analysis</h2>
+            <p>Key insights from the sales dataset</p>
+        </div>
+
+        <div class="analysis-grid">
+
+            <div class="analysis-card">
+                <h3>Maximum Sales</h3>
+                <p>December</p>
+            </div>
+
+            <div class="analysis-card">
+                <h3>Maximum Profit</h3>
+                <p>December</p>
+            </div>
+
+            <div class="analysis-card">
+                <h3>Advertisement Relationship</h3>
+                <p>Positive</p>
+            </div>
+
+            <div class="analysis-card">
+                <h3>Customer Relationship</h3>
+                <p>Positive</p>
+            </div>
+
+            <div class="analysis-card">
+                <h3>Best Performing Quarter</h3>
+                <p>Q4</p>
+            </div>
+
+        </div>
+
+
+        <!-- OBSERVATIONS -->
+        <div class="observations">
+
+            <h2>Key Observations</h2>
+
+            <ul>
+                <li>
+                    Sales generally increase throughout the year.
+                </li>
+
+                <li>
+                    December has the highest sales with $40,000.
+                </li>
+
+                <li>
+                    December also has the highest profit with $11,000.
+                </li>
+
+                <li>
+                    Advertisement spending and sales show a positive relationship.
+                </li>
+
+                <li>
+                    Customer growth is positively related to sales growth.
+                </li>
+
+                <li>
+                    Q4 is the best-performing quarter based on total sales.
+                </li>
+            </ul>
+
+        </div>
+
+    </section>
+
+
+    <!-- FOOTER -->
+    <footer>
+
+        <p>
+            Sales & Business Data Visualization Dashboard
+        </p>
+
+        <p>
+            Python Data Visualization using Matplotlib
+        </p>
+
+    </footer>
+
+</main>
+
+
+<script>
+
+    // =========================
+    // DATA FROM ASSIGNMENT
+    // =========================
+
+    const months = [
+        "Jan", "Feb", "Mar",
+        "Apr", "May", "Jun",
+        "Jul", "Aug", "Sep",
+        "Oct", "Nov", "Dec"
+    ];
+
+    const sales = [
+        12000, 15000, 18000,
+        21000, 24000, 27000,
+        26000, 30000, 32000,
+        35000, 37000, 40000
+    ];
+
+    const profit = [
+        2500, 3200, 4000,
+        5000, 6200, 7100,
+        6800, 7900, 8500,
+        9200, 9800, 11000
+    ];
+
+    const customers = [
+        110, 130, 145,
+        160, 175, 190,
+        185, 210, 225,
+        240, 255, 275
+    ];
+
+    const advertisement = [
+        1200, 1500, 1700,
+        1800, 2100, 2400,
+        2300, 2600, 2800,
+        3000, 3200, 3500
+    ];
+
+
+    // =========================
+    // COMMON OPTIONS
+    // =========================
+
+    const commonOptions = {
+
+        responsive: true,
+
+        maintainAspectRatio: false,
+
+        plugins: {
+
+            legend: {
+                display: true
+            }
+
+        },
+
+        scales: {
+
+            x: {
+                grid: {
+                    display: true
+                }
+            },
+
+            y: {
+                beginAtZero: true,
+
+                grid: {
+                    display: true
+                }
+            }
+
+        }
+
+    };
+
+
+    // =========================
+    // SALES CHART
+    // =========================
+
+    new Chart(
+
+        document.getElementById("salesChart"),
+
+        {
+
+            type: "line",
+
+            data: {
+
+                labels: months,
+
+                datasets: [{
+
+                    label: "Sales",
+
+                    data: sales,
+
+                    borderColor: "blue",
+
+                    borderWidth: 3,
+
+                    pointRadius: 6,
+
+                    pointStyle: "circle",
+
+                    tension: 0.3
+
+                }]
+
+            },
+
+            options: commonOptions
+
+        }
+
+    );
+
+
+    // =========================
+    // PROFIT CHART
+    // =========================
+
+    new Chart(
+
+        document.getElementById("profitChart"),
+
+        {
+
+            type: "line",
+
+            data: {
+
+                labels: months,
+
+                datasets: [{
+
+                    label: "Profit",
+
+                    data: profit,
+
+                    borderColor: "red",
+
+                    borderWidth: 3,
+
+                    borderDash: [8, 5],
+
+                    pointRadius: 6,
+
+                    pointStyle: "rect",
+
+                    tension: 0.3
+
+                }]
+
+            },
+
+            options: commonOptions
+
+        }
+
+    );
+
+
+    // =========================
+    // CUSTOMER CHART
+    // =========================
+
+    new Chart(
+
+        document.getElementById("customerChart"),
+
+        {
+
+            type: "line",
+
+            data: {
+
+                labels: months,
+
+                datasets: [{
+
+                    label: "Customers",
+
+                    data: customers,
+
+                    borderColor: "green",
+
+                    borderWidth: 3,
+
+                    pointRadius: 6,
+
+                    pointStyle: "triangle",
+
+                    tension: 0.3
+
+                }]
+
+            },
+
+            options: commonOptions
+
+        }
+
+    );
+
+
+    // =========================
+    // ADVERTISEMENT SCATTER
+    // =========================
+
+    const scatterData = advertisement.map(
+
+        (value, index) => ({
+
+            x: value,
+
+            y: sales[index]
+
+        })
+
+    );
+
+
+    new Chart(
+
+        document.getElementById("advertisementChart"),
+
+        {
+
+            type: "scatter",
+
+            data: {
+
+                datasets: [{
+
+                    label: "Advertisement vs Sales",
+
+                    data: scatterData,
+
+                    backgroundColor: "#7c3aed",
+
+                    pointRadius: customers.map(
+
+                        customer =>
+                            customer / 25
+
+                    )
+
+                }]
+
+            },
+
+            options: {
+
+                responsive: true,
+
+                maintainAspectRatio: false,
+
+                scales: {
+
+                    x: {
+
+                        title: {
+
+                            display: true,
+
+                            text: "Advertisement Cost"
+
+                        }
+
+                    },
+
+                    y: {
+
+                        title: {
+
+                            display: true,
+
+                            text: "Sales"
+
+                        },
+
+                        beginAtZero: true
+
+                    }
+
+                }
+
+            }
+
+        }
+
+    );
+
+
+    // =========================
+    // SALES VS CUSTOMERS
+    // =========================
+
+    new Chart(
+
+        document.getElementById("comparisonChart"),
+
+        {
+
+            type: "line",
+
+            data: {
+
+                labels: months,
+
+                datasets: [
+
+                    {
+
+                        label: "Sales",
+
+                        data: sales,
+
+                        borderColor: "blue",
+
+                        borderWidth: 3,
+
+                        pointRadius: 5,
+
+                        pointStyle: "circle",
+
+                        yAxisID: "salesAxis"
+
+                    },
+
+                    {
+
+                        label: "Customers",
+
+                        data: customers,
+
+                        borderColor: "green",
+
+                        borderWidth: 3,
+
+                        pointRadius: 5,
+
+                        pointStyle: "diamond",
+
+                        yAxisID: "customerAxis"
+
+                    }
+
+                ]
+
+            },
+
+            options: {
+
+                responsive: true,
+
+                maintainAspectRatio: false,
+
+                scales: {
+
+                    salesAxis: {
+
+                        type: "linear",
+
+                        position: "left",
+
+                        title: {
+
+                            display: true,
+
+                            text: "Sales"
+
+                        }
+
+                    },
+
+                    customerAxis: {
+
+                        type: "linear",
+
+                        position: "right",
+
+                        title: {
+
+                            display: true,
+
+                            text: "Customers"
+
+                        },
+
+                        grid: {
+
+                            drawOnChartArea: false
+
+                        }
+
+                    }
+
+                }
+
+            }
+
+        }
+
+    );
+
+
+    // =========================
+    // DASHBOARD SALES
+    // =========================
+
+    new Chart(
+
+        document.getElementById("dashboardSales"),
+
+        {
+
+            type: "line",
+
+            data: {
+
+                labels: months,
+
+                datasets: [{
+
+                    label: "Sales",
+
+                    data: sales,
+
+                    borderColor: "green",
+
+                    borderWidth: 3,
+
+                    pointRadius: 5,
+
+                    pointStyle: "diamond"
+
+                }]
+
+            },
+
+            options: commonOptions
+
+        }
+
+    );
+
+
+    // =========================
+    // DASHBOARD PROFIT
+    // =========================
+
+    new Chart(
+
+        document.getElementById("dashboardProfit"),
+
+        {
+
+            type: "line",
+
+            data: {
+
+                labels: months,
+
+                datasets: [{
+
+                    label: "Profit",
+
+                    data: profit,
+
+                    borderColor: "red",
+
+                    borderWidth: 3,
+
+                    borderDash: [7, 5],
+
+                    pointRadius: 5,
+
+                    pointStyle: "rect"
+
+                }]
+
+            },
+
+            options: commonOptions
+
+        }
+
+    );
+
+
+    // =========================
+    // DASHBOARD ADVERTISEMENT
+    // =========================
+
+    new Chart(
+
+        document.getElementById(
+            "dashboardAdvertisement"
+        ),
+
+        {
+
+            type: "scatter",
+
+            data: {
+
+                datasets: [{
+
+                    label: "Advertisement vs Sales",
+
+                    data: scatterData,
+
+                    backgroundColor: "purple",
+
+                    pointRadius: 7
+
+                }]
+
+            },
+
+            options: {
+
+                responsive: true,
+
+                maintainAspectRatio: false,
+
+                scales: {
+
+                    x: {
+
+                        title: {
+
+                            display: true,
+
+                            text: "Advertisement"
+
+                        }
+
+                    },
+
+                    y: {
+
+                        title: {
+
+                            display: true,
+
+                            text: "Sales"
+
+                        }
+
+                    }
+
+                }
+
+            }
+
+        }
+
+    );
+
+
+    // =========================
+    // DASHBOARD CUSTOMERS
+    // =========================
+
+    new Chart(
+
+        document.getElementById(
+            "dashboardCustomers"
+        ),
+
+        {
+
+            type: "line",
+
+            data: {
+
+                labels: months,
+
+                datasets: [{
+
+                    label: "Customers",
+
+                    data: customers,
+
+                    borderColor: "green",
+
+                    borderWidth: 3,
+
+                    pointRadius: 5,
+
+                    pointStyle: "triangle"
+
+                }]
+
+            },
+
+            options: commonOptions
+
+        }
+
+    );
+
+
+    // =========================
+    // DOWNLOAD DASHBOARD
+    // =========================
+
+    function downloadDashboard() {
+
+        alert(
+            "Dashboard is ready. You can use your browser's Print option to save this dashboard as PDF."
+        );
+
+        window.print();
+
+    }
+
+</script>
+
+</body>
+</html>
+```

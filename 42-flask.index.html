@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flask Page Explorer</title>
+<style>
+  :root {
+    --bg-deep: #0b0e14;
+    --bg-panel: #12161f;
+    --accent: #7c5cff;
+    --accent-2: #35d0c0;
+    --text-main: #e8eaf2;
+    --text-dim: #8a8fa3;
+    --card-border: #232838;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background:
+      radial-gradient(circle at 15% 20%, rgba(124,92,255,0.15), transparent 40%),
+      radial-gradient(circle at 85% 75%, rgba(53,208,192,0.12), transparent 45%),
+      var(--bg-deep);
+    color: var(--text-main);
+    padding: 48px 24px 80px;
+  }
+
+  .wrap {
+    max-width: 920px;
+    margin: 0 auto;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 56px;
+  }
+
+  .kicker {
+    letter-spacing: 3px;
+    font-size: 13px;
+    color: var(--accent-2);
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+
+  h1 {
+    font-size: clamp(32px, 5vw, 48px);
+    margin: 12px 0 8px;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  header p {
+    color: var(--text-dim);
+    font-size: 16px;
+    max-width: 520px;
+    margin: 0 auto;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 20px;
+  }
+
+  .card {
+    position: relative;
+    background: var(--bg-panel);
+    border: 1px solid var(--card-border);
+    border-radius: 14px;
+    padding: 22px 20px;
+    text-decoration: none;
+    color: var(--text-main);
+    overflow: hidden;
+    transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+  }
+
+  .card::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0;
+    width: 4px;
+    height: 100%;
+    background: linear-gradient(180deg, var(--accent), var(--accent-2));
+    opacity: 0.85;
+  }
+
+  .card:hover {
+    transform: translateY(-6px);
+    border-color: var(--accent);
+    box-shadow: 0 12px 30px rgba(124,92,255,0.25);
+  }
+
+  .num {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--accent-2);
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+    display: block;
+  }
+
+  .route-name {
+    font-size: 19px;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+
+  .route-path {
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    color: var(--text-dim);
+    background: rgba(255,255,255,0.04);
+    padding: 4px 8px;
+    border-radius: 6px;
+    display: inline-block;
+  }
+
+  .arrow {
+    position: absolute;
+    right: 18px;
+    bottom: 18px;
+    font-size: 20px;
+    color: var(--accent);
+    opacity: 0;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+  }
+
+  .card:hover .arrow {
+    opacity: 1;
+    transform: translateX(4px);
+  }
+
+  footer {
+    text-align: center;
+    margin-top: 60px;
+    color: var(--text-dim);
+    font-size: 13px;
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <span class="kicker">Flask Route Directory</span>
+      <h1>Page Explorer</h1>
+      <p>Ten hand-written routes, one place to reach them. Click any card to visit that page.</p>
+    </header>
+
+    <div class="grid">
+      <a class="card" href="/">
+        <span class="num">HOME</span>
+        <div class="route-name">Landing Route</div>
+        <span class="route-path">/</span>
+        <span class="arrow">&#8594;</span>
+      </a>
+
+      <a class="card" href="/first_page">
+        <span class="num">01</span>
+        <div class="route-name">First Page</div>
+        <span class="route-path">/first_page</span>
+        <span class="arrow">&#8594;</span>
+      </a>
+
+      <a class="card" href="/second_page">
+        <span class="num">02</span>
+        <div class="route-name">Second Page</div>
+        <span class="route-path">/second_page</span>
+        <span class="arrow">&#8594;</span>
+      </a>
+
+      <a class="card" href="/third_page">
+        <span class="num">03</span>
+        <div class="route-name">Third Page</div>
+        <span class="route-path">/third_page</span>
+        <span class="arrow">&#8594;</span>
+      </a>
+
+      <a class="card" href="/fourth_page">
+        <span class="num">04</span>
+        <div class="route-name">Fourth Page</div>
+        <span class="route-path">/fourth_page</span>
+        <span class="arrow">&#8594;</span>
+      </a>
+
+      <a class="card" href="/fifth_page">
+        <span class="num">05</span>
+        <div class="route-name">Fifth Page</div>
+        <span class="route-path">/fifth_page</span>
+        <span class="arrow">&#8594;</span>
+      </a>
+
+      <a class="card" href="/sixth_page">
+        <span class="num">06</span>
+        <div class="route-name">Sixth Page</div>
+        <span class="route-path">/sixth_page</span>
+        <span class="arrow">&#8594;</span>
+      </a>
+
+      <a class="card" href="/seventh_page">
+        <span class="num">07</span>
+        <div class="route-name">Seventh Page</div>
+        <span class="route-path">/seventh_page</span>
+        <span class="arrow">&#8594;</span>
+      </a>
+
+      <a class="card" href="/eighth_page">
+        <span class="num">08</span>
+        <div class="route-name">Eighth Page</div>
+        <span class="route-path">/eighth_page</span>
+        <span class="arrow">&#8594;</span>
+      </a>
+
+      <a class="card" href="/ninth_page">
+        <span class="num">09</span>
+        <div class="route-name">Ninth Page</div>
+        <span class="route-path">/ninth_page</span>
+        <span class="arrow">&#8594;</span>
+      </a>
+
+      <a class="card" href="/tenth_page">
+        <span class="num">10</span>
+        <div class="route-name">Tenth Page</div>
+        <span class="route-path">/tenth_page</span>
+        <span class="arrow">&#8594;</span>
+      </a>
+    </div>
+
+    <footer>Built with Flask &middot; served from a single index route</footer>
+  </div>
+</body>
+</html>

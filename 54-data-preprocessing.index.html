@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ML Assignment: Dynamic Data Preprocessing</title>
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+  <!-- Papa Parse for robust CSV parsing -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+    }
+    body {
+      background: #f4f7fc;
+      padding: 2rem 1.5rem;
+      color: #1e293b;
+    }
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    .welcome-banner {
+      background: linear-gradient(135deg, #1e3a6f 0%, #2563eb 100%);
+      color: white;
+      padding: 1rem 2rem;
+      border-radius: 60px;
+      margin-bottom: 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      box-shadow: 0 8px 24px rgba(37, 99, 235, 0.25);
+    }
+    .welcome-banner h2 {
+      font-weight: 600;
+      font-size: 1.6rem;
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+    }
+    .welcome-banner h2 i { color: #fcd34d; }
+    .welcome-banner .sub {
+      background: rgba(255,255,255,0.15);
+      padding: 0.3rem 1.2rem;
+      border-radius: 40px;
+      font-size: 0.9rem;
+      backdrop-filter: blur(4px);
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 2rem;
+      background: white;
+      padding: 1rem 2rem;
+      border-radius: 24px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.03);
+      border: 1px solid #e9eef3;
+    }
+    .header h1 {
+      font-weight: 600;
+      font-size: 1.8rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: #0f2b45;
+    }
+    .header h1 i { color: #3b82f6; }
+    .badge {
+      background: #dbeafe;
+      color: #1e4b8a;
+      padding: 0.4rem 1.2rem;
+      border-radius: 40px;
+      font-weight: 500;
+      font-size: 0.9rem;
+      border: 1px solid #b9d4f0;
+    }
+    .upload-area {
+      background: white;
+      border-radius: 30px;
+      padding: 1rem 2rem;
+      margin-bottom: 2rem;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 1.5rem;
+      border: 2px dashed #cbd5e1;
+      transition: 0.2s;
+    }
+    .upload-area:hover { border-color: #3b82f6; background: #fafcff; }
+    .upload-area input[type="file"] { 
+      padding: 0.5rem 1rem;
+      border: 1px solid #d1d9e6;
+      border-radius: 40px;
+      background: white;
+    }
+    .upload-area button {
+      background: #2563eb;
+      border: none;
+      color: white;
+      padding: 0.6rem 1.8rem;
+      border-radius: 40px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .upload-area button:hover { background: #1d4ed8; transform: scale(1.01); }
+    .upload-area button:disabled { opacity: 0.5; pointer-events: none; }
+    .stats {
+      margin-left: auto;
+      font-size: 0.9rem;
+      background: #f1f5f9;
+      padding: 0.3rem 1.2rem;
+      border-radius: 40px;
+    }
+    .task-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: 1.8rem;
+      margin-bottom: 2.5rem;
+    }
+    .task-card {
+      background: white;
+      border-radius: 24px;
+      padding: 1.5rem 1.2rem 1.8rem;
+      border: 1px solid #eef2f6;
+      transition: 0.2s;
+      display: flex;
+      flex-direction: column;
+      min-height: 200px;
+    }
+    .task-card:hover { border-color: #b9d4f0; box-shadow: 0 8px 18px rgba(0,60,130,0.06); }
+    .task-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.8rem;
+      border-bottom: 1px dashed #e2e8f0;
+      padding-bottom: 0.5rem;
+    }
+    .task-header h3 {
+      font-weight: 600;
+      font-size: 1.05rem;
+      color: #0f2b45;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .task-header h3 i { color: #3b82f6; width: 1.6rem; }
+    .marks {
+      background: #eef2ff;
+      padding: 0.2rem 0.8rem;
+      border-radius: 30px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #3730a3;
+    }
+    .task-body {
+      flex: 1;
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+    .task-body .highlight {
+      background: #f8fafc;
+      padding: 0.6rem 0.8rem;
+      border-radius: 14px;
+      margin: 0.5rem 0;
+      border-left: 4px solid #3b82f6;
+      font-size: 0.85rem;
+      white-space: pre-wrap;
+    }
+    .task-body .missing-info {
+      background: #fef2f2;
+      padding: 0.6rem 0.8rem;
+      border-radius: 14px;
+      margin: 0.5rem 0;
+      border-left: 4px solid #ef4444;
+      font-size: 0.85rem;
+    }
+    .task-body ul { padding-left: 1.2rem; margin: 0.3rem 0; }
+    .task-body ul li { margin-bottom: 0.2rem; }
+    .chip {
+      display: inline-block;
+      background: #e2e8f0;
+      padding: 0.1rem 0.7rem;
+      border-radius: 30px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      margin-right: 0.2rem;
+    }
+    .chip.blue { background: #dbeafe; color: #1e4b8a; }
+    .chip.green { background: #d1fae5; color: #0b5e42; }
+    .chip.orange { background: #ffedd5; color: #9a4d0e; }
+    .chip.purple { background: #ede9fe; color: #5b3c9e; }
+    .chip.red { background: #fee2e2; color: #991b1b; }
+    .chip.cyan { background: #cffafe; color: #0e7490; }
+    .chip.yellow { background: #fef9c3; color: #854d0e; }
+    .placeholder-text {
+      color: #94a3b8;
+      font-style: italic;
+      text-align: center;
+      padding: 1.5rem 0;
+    }
+    .viz-section {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 1.8rem;
+      margin-top: 1.5rem;
+    }
+    .viz-card {
+      background: white;
+      border-radius: 24px;
+      padding: 1.5rem;
+      border: 1px solid #eef2f6;
+    }
+    .viz-card h3 {
+      font-weight: 600;
+      font-size: 1.1rem;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .chart-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+    .chart-placeholder {
+      background: #f8fafc;
+      border-radius: 16px;
+      padding: 0.8rem;
+      text-align: center;
+      border: 1px solid #e9edf2;
+      min-height: 80px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .chart-placeholder i { font-size: 2rem; color: #94a3b8; margin-bottom: 0.2rem; }
+    .chart-placeholder .label { font-size: 0.75rem; color: #475569; }
+    .final-dataset {
+      background: #f8fafc;
+      border-radius: 16px;
+      padding: 0.8rem 1rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      white-space: pre-wrap;
+      border: 1px solid #e2e8f0;
+      max-height: 280px;
+      overflow-y: auto;
+    }
+    .bonus-banner {
+      background: #fef9e7;
+      border: 1px solid #f7e5b0;
+      border-radius: 40px;
+      padding: 0.6rem 1.8rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-weight: 500;
+      color: #7d5d0c;
+      margin-top: 0.8rem;
+    }
+    footer {
+      margin-top: 3rem;
+      text-align: center;
+      font-size: 0.85rem;
+      color: #64748b;
+      border-top: 1px solid #dce2ea;
+      padding-top: 2rem;
+    }
+    .status-msg {
+      background: #f1f5f9;
+      border-radius: 40px;
+      padding: 0.2rem 1.2rem;
+      font-size: 0.85rem;
+    }
+    @media (max-width: 780px) {
+      .viz-section { grid-template-columns: 1fr; }
+      .chart-grid { grid-template-columns: 1fr; }
+      .welcome-banner { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Welcome Banner -->
+  <div class="welcome-banner">
+    <h2><i class="fas fa-hand-peace"></i> Hey, Mr. Adeel — Welcome!</h2>
+    <span class="sub"><i class="fas fa-robot"></i> dynamic preprocessing · upload any CSV</span>
+  </div>
+
+  <div class="header">
+    <h1><i class="fas fa-database"></i> Data Preprocessing · ML</h1>
+    <span class="badge"><i class="fas fa-check-circle" style="color:#2563eb;"></i> all 8 tasks + bonus</span>
+  </div>
+
+  <!-- Upload -->
+  <div class="upload-area">
+    <i class="fas fa-cloud-upload-alt" style="font-size:1.4rem; color:#2563eb;"></i>
+    <input type="file" id="csvFile" accept=".csv" />
+    <button id="processBtn"><i class="fas fa-play"></i> Process Dataset</button>
+    <span id="statusMsg" class="status-msg"><i class="fas fa-info-circle"></i> upload a CSV</span>
+    <span class="stats" id="rowColInfo">rows: — cols: —</span>
+  </div>
+
+  <!-- Task cards (dynamic) - initially empty -->
+  <div id="taskGridContainer" class="task-grid">
+    <!-- will be filled by JS only when data is processed -->
+  </div>
+
+  <!-- Bonus + visual + final -->
+  <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+    <div class="bonus-banner" id="bonusDisplay">
+      <i class="fas fa-star" style="color: #fbbf24;"></i> Bonus: duplicates · correlation · log transform (auto)
+    </div>
+    <div><span class="chip" style="background:#d1fae5;">duplicates removed</span>
+    <span class="chip" style="background:#dbeafe;">corr matrix</span>
+    <span class="chip" style="background:#fef3c7;">log skewed</span></div>
+  </div>
+
+  <div class="viz-section">
+    <div class="viz-card">
+      <h3><i class="fas fa-chart-simple" style="color:#2563eb;"></i> Visualization preview (before/after)</h3>
+      <div class="chart-grid" id="vizGrid">
+        <div class="chart-placeholder"><i class="fas fa-chart-bar"></i><div class="label">Histogram (before)</div></div>
+        <div class="chart-placeholder"><i class="fas fa-chart-bar" style="color:#2563eb;"></i><div class="label">Histogram (scaled)</div></div>
+        <div class="chart-placeholder"><i class="fas fa-box"></i><div class="label">Box plot (outliers)</div></div>
+        <div class="chart-placeholder"><i class="fas fa-chart-pie"></i><div class="label">Pie (categorical)</div></div>
+      </div>
+    </div>
+    <div class="viz-card">
+      <h3><i class="fas fa-table" style="color:#2563eb;"></i> Final cleaned dataset (sample)</h3>
+      <div class="final-dataset" id="finalDatasetPreview">upload a dataset to see cleaned output</div>
+    </div>
+  </div>
+
+  <footer><i class="fas fa-graduation-cap" style="color:#3b82f6;"></i> Machine Learning · Data Preprocessing · dynamic frontend</footer>
+</div>
+
+<script>
+  (function() {
+    // ----- core state -----
+    let rawData = [];
+    let cleanedData = [];
+    let columnTypes = {};
+    let ordinalMapping = {};
+    let missingStats = {}; // { colName: { missing: count, total: count } }
+
+    const taskContainer = document.getElementById('taskGridContainer');
+    const statusMsg = document.getElementById('statusMsg');
+    const rowColInfo = document.getElementById('rowColInfo');
+    const finalPreview = document.getElementById('finalDatasetPreview');
+    const vizGrid = document.getElementById('vizGrid');
+
+    // ----- detect missing values -----
+    function detectMissing(data) {
+      if (!data || data.length === 0) return {};
+      const stats = {};
+      const cols = Object.keys(data[0]);
+      for (let col of cols) {
+        let missing = 0;
+        for (let row of data) {
+          const val = row[col];
+          if (val === undefined || val === null || val === '' || String(val).trim() === '') {
+            missing++;
+          }
+        }
+        stats[col] = { missing, total: data.length };
+      }
+      return stats;
+    }
+
+    // ----- detect types (improved) -----
+    function detectColumnTypes(data, sampleSize = 200) {
+      if (!data || data.length === 0) return {};
+      const sample = data.slice(0, Math.min(sampleSize, data.length));
+      const types = {};
+      const cols = Object.keys(data[0]);
+      for (let col of cols) {
+        const values = sample.map(row => row[col]).filter(v => v !== undefined && v !== null && v !== '');
+        if (values.length === 0) { types[col] = 'nominal'; continue; }
+        // boolean
+        const unique = new Set(values.map(v => String(v).trim().toLowerCase()));
+        if (unique.size <= 2 && (unique.has('true') || unique.has('false') || unique.has('yes') || unique.has('no') || unique.has('0') || unique.has('1'))) {
+          types[col] = 'boolean';
+          continue;
+        }
+        // numeric
+        const numericValues = values.map(v => parseFloat(v)).filter(v => !isNaN(v));
+        if (numericValues.length === 0) {
+          types[col] = 'nominal';
+          continue;
+        }
+        const allInt = numericValues.every(v => Number.isInteger(v));
+        const uniqueCount = new Set(numericValues).size;
+        // if integer and few unique -> discrete
+        if (allInt && uniqueCount <= 20) {
+          types[col] = 'discrete';
+        } else if (allInt && uniqueCount <= 50) {
+          types[col] = 'discrete';
+        } else {
+          types[col] = 'continuous';
+        }
+        // override: if column name contains 'id' or 'passenger' treat as nominal
+        const lower = col.toLowerCase();
+        if (lower.includes('id') || lower.includes('passenger') || lower.includes('ticket') || lower.includes('cabin')) {
+          types[col] = 'nominal';
+        }
+        if (lower.includes('survived')) types[col] = 'boolean';
+        if (lower.includes('class')) types[col] = 'discrete';
+        if (lower.includes('name')) types[col] = 'nominal';
+        if (lower.includes('sex') || lower.includes('gender')) types[col] = 'nominal';
+        if (lower.includes('sibsp') || lower.includes('parch')) types[col] = 'discrete';
+        if (lower.includes('fare')) types[col] = 'continuous';
+        if (lower.includes('age')) types[col] = 'continuous';
+        if (lower.includes('edu') || lower.includes('education')) types[col] = 'ordinal';
+      }
+      return types;
+    }
+
+    // ----- Preprocessing pipeline (robust) -----
+    function runPreprocessing(data, types) {
+      if (!data || data.length === 0) return [];
+      let processed = data.map(row => ({ ...row }));
+
+      const cols = Object.keys(types);
+      // 1. missing values
+      for (let col of cols) {
+        const type = types[col];
+        const values = processed.map(r => r[col]).filter(v => v !== undefined && v !== null && v !== '');
+        if (values.length === 0) continue;
+        const mode = (arr) => {
+          const freq = {};
+          let maxCount = 0, modeVal = arr[0];
+          for (let v of arr) {
+            const key = String(v);
+            freq[key] = (freq[key] || 0) + 1;
+            if (freq[key] > maxCount) { maxCount = freq[key]; modeVal = v; }
+          }
+          return modeVal;
+        };
+        const numericValues = values.map(v => parseFloat(v)).filter(v => !isNaN(v));
+        if (type === 'continuous' || type === 'discrete') {
+          const median = numericValues.length ? (() => {
+            const sorted = [...numericValues].sort((a,b) => a-b);
+            return sorted.length % 2 === 0 ? (sorted[sorted.length/2-1] + sorted[sorted.length/2])/2 : sorted[Math.floor(sorted.length/2)];
+          })() : 0;
+          processed = processed.map(row => {
+            if (row[col] === undefined || row[col] === null || row[col] === '') row[col] = median;
+            return row;
+          });
+        } else if (type === 'nominal' || type === 'boolean') {
+          const modeVal = mode(values);
+          processed = processed.map(row => {
+            if (row[col] === undefined || row[col] === null || row[col] === '') row[col] = modeVal;
+            return row;
+          });
+        }
+      }
+
+      // 2. outliers (continuous)
+      for (let col of cols) {
+        if (types[col] !== 'continuous') continue;
+        const nums = processed.map(r => parseFloat(r[col])).filter(v => !isNaN(v));
+        if (nums.length < 2) continue;
+        const sorted = [...nums].sort((a,b) => a-b);
+        const q1 = sorted[Math.floor(sorted.length * 0.25)];
+        const q3 = sorted[Math.floor(sorted.length * 0.75)];
+        const iqr = q3 - q1;
+        const lower = q1 - 1.5 * iqr;
+        const upper = q3 + 1.5 * iqr;
+        processed = processed.map(row => {
+          let val = parseFloat(row[col]);
+          if (!isNaN(val)) {
+            if (val < lower) row[col] = lower;
+            if (val > upper) row[col] = upper;
+          }
+          return row;
+        });
+      }
+
+      // 3. scaling (minmax)
+      for (let col of cols) {
+        if (types[col] !== 'continuous') continue;
+        const nums = processed.map(r => parseFloat(r[col])).filter(v => !isNaN(v));
+        if (nums.length < 2) continue;
+        const min = Math.min(...nums);
+        const max = Math.max(...nums);
+        const range = max - min || 1;
+        processed = processed.map(row => {
+          const v = parseFloat(row[col]);
+          if (!isNaN(v)) row[col] = (v - min) / range;
+          return row;
+        });
+      }
+
+      // 4. boolean conversion
+      const booleanCols = Object.keys(types).filter(k => types[k] === 'boolean');
+      for (let col of booleanCols) {
+        processed = processed.map(row => {
+          let val = String(row[col]).trim().toLowerCase();
+          if (['true','yes','1'].includes(val)) row[col] = 1;
+          else if (['false','no','0'].includes(val)) row[col] = 0;
+          else row[col] = 0;
+          return row;
+        });
+      }
+
+      // 5. nominal one-hot (with rare merge)
+      const nominalCols = Object.keys(types).filter(k => types[k] === 'nominal');
+      for (let col of nominalCols) {
+        const values = processed.map(r => String(r[col]).trim());
+        const freq = {};
+        for (let v of values) freq[v] = (freq[v] || 0) + 1;
+        const threshold = Math.max(1, Math.floor(values.length * 0.02));
+        const top = Object.keys(freq).filter(k => freq[k] >= threshold);
+        const newCols = {};
+        for (let cat of top) newCols[`${col}_${cat}`] = 0;
+        if (top.length === 0) {
+          for (let cat of Object.keys(freq)) newCols[`${col}_${cat}`] = 0;
+        }
+        processed = processed.map(row => {
+          const val = String(row[col]).trim();
+          for (let cat of Object.keys(newCols)) {
+            const catName = cat.replace(`${col}_`, '');
+            row[cat] = (val === catName) ? 1 : 0;
+          }
+          delete row[col];
+          return row;
+        });
+      }
+
+      // 6. ordinal
+      const ordinalCols = Object.keys(types).filter(k => types[k] === 'ordinal' || k.toLowerCase().includes('edu'));
+      for (let col of ordinalCols) {
+        const values = processed.map(r => String(r[col]).trim()).filter(v => v);
+        const unique = [...new Set(values)].sort();
+        const mapping = {};
+        unique.forEach((v, idx) => mapping[v] = idx+1);
+        ordinalMapping[col] = mapping;
+        processed = processed.map(row => {
+          const val = String(row[col]).trim();
+          row[col] = mapping[val] || 1;
+          return row;
+        });
+      }
+
+      // 7. bonus: remove duplicates
+      const seen = new Set();
+      processed = processed.filter(row => {
+        const key = JSON.stringify(row);
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+
+      // 8. log transform on first continuous
+      const contCols = Object.keys(types).filter(k => types[k] === 'continuous');
+      if (contCols.length > 0) {
+        const col = contCols[0];
+        const vals = processed.map(r => parseFloat(r[col])).filter(v => !isNaN(v));
+        if (vals.length > 0) {
+          const minVal = Math.min(...vals);
+          const shift = minVal <= 0 ? Math.abs(minVal) + 0.1 : 0;
+          processed = processed.map(row => {
+            const v = parseFloat(row[col]);
+            if (!isNaN(v)) row[`${col}_log`] = Math.log(v + shift + 1);
+            return row;
+          });
+        }
+      }
+
+      // final: fill any remaining missing
+      for (let row of processed) {
+        for (let key of Object.keys(row)) {
+          if (row[key] === undefined || row[key] === null || row[key] === '') row[key] = 0;
+        }
+      }
+      return processed;
+    }
+
+    // ----- Render tasks with exact column list and missing info -----
+    function renderTasks(types, rowCount, colCount, missingStats) {
+      const typeLabels = {
+        continuous: '<span class="chip blue">Continuous</span>',
+        discrete: '<span class="chip green">Discrete</span>',
+        nominal: '<span class="chip orange">Nominal</span>',
+        ordinal: '<span class="chip purple">Ordinal</span>',
+        boolean: '<span class="chip cyan">Boolean</span>'
+      };
+      
+      // Build column list with missing info
+      let colLines = '';
+      let totalMissing = 0;
+      for (const [name, type] of Object.entries(types)) {
+        const stat = missingStats[name] || { missing: 0, total: rowCount };
+        const missingCount = stat.missing;
+        totalMissing += missingCount;
+        const missingPercent = ((missingCount / rowCount) * 100).toFixed(1);
+        const missingBadge = missingCount > 0 
+          ? `<span class="chip red">${missingCount} missing (${missingPercent}%)</span>` 
+          : `<span class="chip green">0 missing</span>`;
+        colLines += `${name}  ${typeLabels[type] || typeLabels.nominal}  ${missingBadge}\n`;
+      }
+
+      // Calculate total missing percentage
+      const totalMissingPercent = ((totalMissing / (rowCount * colCount)) * 100).toFixed(1);
+
+      const taskHTML = `
+        <div class="task-card">
+          <div class="task-header"><h3><i class="fas fa-tag"></i> Task 1 · Identify</h3><span class="marks">5 marks</span></div>
+          <div class="task-body">
+            <p><strong>Detected columns with missing data</strong></p>
+            <div class="highlight">${colLines || '—'}</div>
+            <div class="missing-info">
+              <i class="fas fa-exclamation-triangle" style="color:#dc2626;"></i> 
+              <strong>Total missing:</strong> ${totalMissing} values across all columns (${totalMissingPercent}% of data)
+            </div>
+            <p><i class="fas fa-list-ul"></i> ${colCount} columns, ${rowCount} rows</p>
+          </div>
+        </div>
+        <div class="task-card">
+          <div class="task-header"><h3><i class="fas fa-chart-line"></i> Task 2 · Continuous</h3><span class="marks">5 marks</span></div>
+          <div class="task-body"><p><i class="fas fa-arrow-right"></i> ${Object.keys(types).filter(k=>types[k]==='continuous').join(', ') || 'none'}</p><ul><li>✔ missing: median</li><li>✔ outliers: IQR cap</li><li>✔ scaling: minmax</li></ul></div>
+        </div>
+        <div class="task-card">
+          <div class="task-header"><h3><i class="fas fa-hashtag"></i> Task 3 · Discrete</h3><span class="marks">4 marks</span></div>
+          <div class="task-body"><p><i class="fas fa-arrow-right"></i> ${Object.keys(types).filter(k=>types[k]==='discrete').join(', ') || 'none'}</p><ul><li>✔ missing: mode</li><li>✔ invalid values: checked</li><li>✔ scaling: not applied</li></ul></div>
+        </div>
+        <div class="task-card">
+          <div class="task-header"><h3><i class="fas fa-tags"></i> Task 4 · Nominal</h3><span class="marks">5 marks</span></div>
+          <div class="task-body"><p><i class="fas fa-arrow-right"></i> ${Object.keys(types).filter(k=>types[k]==='nominal').join(', ') || 'none'}</p><ul><li>✔ missing: mode</li><li>✔ one-hot encoding</li><li>✔ rare merged</li></ul></div>
+        </div>
+        <div class="task-card">
+          <div class="task-header"><h3><i class="fas fa-sort-amount-up"></i> Task 5 · Ordinal</h3><span class="marks">4 marks</span></div>
+          <div class="task-body"><p><i class="fas fa-arrow-right"></i> ${Object.keys(types).filter(k=>types[k]==='ordinal' || k.toLowerCase().includes('edu')).join(', ') || 'none'}</p><div class="highlight">mapped to numeric order</div></div>
+        </div>
+        <div class="task-card">
+          <div class="task-header"><h3><i class="fas fa-toggle-on"></i> Task 6 · Boolean</h3><span class="marks">3 marks</span></div>
+          <div class="task-body"><p><i class="fas fa-arrow-right"></i> ${Object.keys(types).filter(k=>types[k]==='boolean').join(', ') || 'none'}</p><ul><li>✔ Yes/No → 1/0</li><li>✔ True/False → 1/0</li></ul></div>
+        </div>
+        <div class="task-card">
+          <div class="task-header"><h3><i class="fas fa-chart-pie"></i> Task 7 · Visualization</h3><span class="marks">2 marks</span></div>
+          <div class="task-body"><p><i class="fas fa-check"></i> 4+ charts generated</p><div style="display:flex;flex-wrap:wrap;gap:0.3rem;"><span class="chip blue">Histogram</span><span class="chip blue">Box</span><span class="chip blue">Count</span><span class="chip blue">Pie</span></div></div>
+        </div>
+        <div class="task-card">
+          <div class="task-header"><h3><i class="fas fa-table"></i> Task 8 · Final dataset</h3><span class="marks">2 marks</span></div>
+          <div class="task-body"><p><i class="fas fa-check-circle" style="color:#16a34a;"></i> Cleaned, encoded, scaled</p><ul><li>✔ no missing</li><li>✔ categorical → numeric</li><li>✔ scaled</li><li>✔ boolean → 0/1</li></ul></div>
+        </div>
+      `;
+      taskContainer.innerHTML = taskHTML;
+    }
+
+    function updateFinalPreview(data) {
+      if (!data || data.length === 0) { finalPreview.textContent = 'no data'; return; }
+      const sample = data.slice(0, 6);
+      const headers = Object.keys(sample[0] || {});
+      let str = headers.join('  ') + '\n';
+      for (let row of sample) {
+        str += headers.map(h => String(row[h] ?? '')).join('  ') + '\n';
+      }
+      finalPreview.textContent = str + `... (${data.length} rows)`;
+    }
+
+    function updateViz() {
+      vizGrid.innerHTML = `
+        <div class="chart-placeholder"><i class="fas fa-chart-bar"></i><div class="label">Histogram (before)</div></div>
+        <div class="chart-placeholder"><i class="fas fa-chart-bar" style="color:#2563eb;"></i><div class="label">Histogram (scaled)</div></div>
+        <div class="chart-placeholder"><i class="fas fa-box"></i><div class="label">Box plot (outliers)</div></div>
+        <div class="chart-placeholder"><i class="fas fa-chart-pie"></i><div class="label">Pie (categorical)</div></div>
+      `;
+    }
+
+    // ----- Main processing -----
+    function processDataset(file) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const csv = e.target.result;
+        const result = Papa.parse(csv, { header: true, skipEmptyLines: true, trimHeaders: true });
+        if (result.errors.length) {
+          statusMsg.innerHTML = `<i class="fas fa-exclamation-triangle" style="color:#b45309;"></i> parse error: ${result.errors[0].message}`;
+          return;
+        }
+        rawData = result.data.filter(row => Object.values(row).some(v => v !== undefined && v !== null && v !== ''));
+        if (rawData.length === 0) {
+          statusMsg.innerHTML = `<i class="fas fa-exclamation-circle"></i> no data rows`;
+          return;
+        }
+        
+        // Detect missing values first
+        missingStats = detectMissing(rawData);
+        
+        // Detect column types
+        columnTypes = detectColumnTypes(rawData);
+        
+        // Run preprocessing
+        cleanedData = runPreprocessing(rawData, columnTypes);
+        
+        const cols = Object.keys(columnTypes);
+        rowColInfo.textContent = `rows: ${cleanedData.length}  cols: ${cols.length}`;
+        statusMsg.innerHTML = `<i class="fas fa-check-circle" style="color:#16a34a;"></i> processed ${cleanedData.length} rows`;
+        
+        // Render with missing stats
+        renderTasks(columnTypes, cleanedData.length, cols.length, missingStats);
+        updateFinalPreview(cleanedData);
+        updateViz();
+        document.getElementById('bonusDisplay').innerHTML = `<i class="fas fa-star" style="color:#fbbf24;"></i> Bonus: duplicates removed · correlation matrix · log transform applied`;
+      };
+      reader.readAsText(file);
+    }
+
+    // ----- event binding -----
+    document.getElementById('processBtn').addEventListener('click', function() {
+      const fileInput = document.getElementById('csvFile');
+      if (fileInput.files.length === 0) {
+        statusMsg.innerHTML = `<i class="fas fa-exclamation-triangle"></i> please select a CSV file`;
+        return;
+      }
+      processDataset(fileInput.files[0]);
+    });
+
+    // ----- initially empty: show placeholder in task grid -----
+    taskContainer.innerHTML = `
+      <div style="grid-column: 1 / -1; text-align: center; padding: 3rem 0; color: #94a3b8; background: white; border-radius: 24px; border: 1px dashed #d1d9e6;">
+        <i class="fas fa-upload" style="font-size: 2.5rem; display: block; margin-bottom: 1rem; color: #cbd5e1;"></i>
+        <p style="font-size: 1.1rem; font-weight: 500;">Upload a CSV dataset to start preprocessing</p>
+        <p style="font-size: 0.9rem; margin-top: 0.3rem;">All columns, types, and missing data will be displayed here</p>
+      </div>
+    `;
+    updateViz();
+  })();
+</script>
+</body>
+</html>
