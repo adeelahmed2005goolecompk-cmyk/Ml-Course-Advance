@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KNN · Height/Weight Classifier</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #0F1611;
+    --paper: #F6F3EA;
+    --paper-raised: #FBF9F3;
+    --green: #2D6A4F;
+    --green-soft: #E4EDE8;
+    --rust: #B5651D;
+    --rust-soft: #F3E6D8;
+    --sage: #8A9A8E;
+    --grid: #D4CBB0;
+    --line: #C9BFA0;
+  }
+
+  * { box-sizing: border-box; }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  ::selection {
+    background: var(--green);
+    color: var(--paper);
+  }
+
+  a { color: inherit; }
+
+  /* ---------- Instrument strip ---------- */
+  .strip {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 14px 28px;
+    background: var(--ink);
+    color: var(--paper);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12.5px;
+    letter-spacing: 0.04em;
+  }
+
+  .strip-title {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+  }
+
+  .strip-title .dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--green);
+    display: inline-block;
+    box-shadow: 0 0 0 3px rgba(45,106,79,0.35);
+  }
+
+  .strip-metrics {
+    display: flex;
+    gap: 22px;
+    flex-wrap: wrap;
+  }
+
+  .strip-metrics span b {
+    color: var(--paper);
+    font-weight: 600;
+  }
+  .strip-metrics span {
+    color: #A9B5AC;
+  }
+
+  /* ---------- Header / masthead ---------- */
+  .masthead {
+    padding: 40px 28px 20px;
+    max-width: 1180px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  .eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--green);
+    margin: 0 0 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .eyebrow::before {
+    content: '';
+    width: 22px;
+    height: 1px;
+    background: var(--green);
+    display: inline-block;
+  }
+
+  h1 {
+    font-family: 'Fraunces', serif;
+    font-optical-sizing: auto;
+    font-weight: 600;
+    font-size: clamp(28px, 4.2vw, 44px);
+    line-height: 1.08;
+    margin: 0 0 12px;
+    letter-spacing: -0.01em;
+  }
+
+  .sub {
+    max-width: 60ch;
+    font-size: 15.5px;
+    line-height: 1.6;
+    color: #40473F;
+    margin: 0;
+  }
+
+  /* ---------- Main layout ---------- */
+  .stage {
+    max-width: 1180px;
+    margin: 0 auto;
+    width: 100%;
+    padding: 8px 28px 60px;
+    display: grid;
+    grid-template-columns: 1.5fr 1fr;
+    gap: 28px;
+    flex: 1;
+  }
+
+  @media (max-width: 880px) {
+    .stage { grid-template-columns: 1fr; }
+  }
+
+  .panel {
+    background: var(--paper-raised);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    position: relative;
+  }
+
+  .panel-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--sage);
+    padding: 16px 20px 0;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  /* ---------- Plot panel ---------- */
+  .plot-wrap {
+    padding: 8px 14px 20px;
+  }
+
+  svg#plot {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  .axis-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    fill: #6B6157;
+  }
+
+  .grid-line {
+    stroke: var(--grid);
+    stroke-width: 1;
+  }
+
+  .train-point {
+    stroke: var(--paper-raised);
+    stroke-width: 2;
+  }
+
+  .train-point.c0 { fill: var(--green); }
+  .train-point.c1 { fill: var(--rust); }
+
+  .train-point-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9.5px;
+    fill: #6B6157;
+    pointer-events: none;
+  }
+
+  .connector {
+    stroke: var(--ink);
+    stroke-width: 1.3;
+    stroke-dasharray: 3 4;
+    opacity: 0;
+  }
+
+  .new-point {
+    opacity: 0;
+    stroke: var(--ink);
+    stroke-width: 2;
+  }
+
+  .neighbor-ring {
+    fill: none;
+    stroke-width: 2;
+    opacity: 0;
+  }
+
+  .legend {
+    display: flex;
+    gap: 18px;
+    padding: 0 20px 16px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11.5px;
+    color: #40473F;
+    flex-wrap: wrap;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+
+  .legend-swatch {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+  .legend-swatch.c0 { background: var(--green); }
+  .legend-swatch.c1 { background: var(--rust); }
+  .legend-swatch.new-swatch {
+    background: transparent;
+    border: 2px solid var(--ink);
+  }
+
+  /* ---------- Input panel ---------- */
+  .input-panel {
+    padding-bottom: 22px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .field-group {
+    padding: 18px 20px 0;
+  }
+
+  label {
+    display: block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11.5px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: #40473F;
+    margin-bottom: 6px;
+  }
+
+  .field-row {
+    position: relative;
+    margin-bottom: 16px;
+  }
+
+  input[type="number"] {
+    width: 100%;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 2px;
+    padding: 11px 44px 11px 13px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 15px;
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  input[type="number"]:focus {
+    border-color: var(--green);
+    box-shadow: 0 0 0 3px var(--green-soft);
+  }
+
+  input[type="number"]::-webkit-outer-spin-button,
+  input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  .unit {
+    position: absolute;
+    right: 13px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12.5px;
+    color: var(--sage);
+    pointer-events: none;
+  }
+
+  .classify-btn {
+    margin: 6px 20px 0;
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    border-radius: 2px;
+    padding: 13px 18px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 14.5px;
+    letter-spacing: 0.01em;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: background 0.15s ease, transform 0.1s ease;
+  }
+
+  .classify-btn:hover { background: #1C2A1F; }
+  .classify-btn:active { transform: scale(0.99); }
+  .classify-btn:focus-visible {
+    outline: 2px solid var(--green);
+    outline-offset: 2px;
+  }
+
+  .classify-btn svg {
+    width: 14px;
+    height: 14px;
+    transition: transform 0.2s ease;
+  }
+  .classify-btn:hover svg { transform: translateX(2px); }
+
+  .error-msg {
+    margin: 10px 20px 0;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--rust);
+    display: none;
+  }
+
+  .error-msg.show { display: block; }
+
+  /* ---------- Result ---------- */
+  .result {
+    margin: 18px 20px 0;
+    border-top: 1px dashed var(--line);
+    padding-top: 16px;
+    opacity: 0;
+    transform: translateY(4px);
+    transition: opacity 0.35s ease, transform 0.35s ease;
+  }
+
+  .result.show {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .result-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--sage);
+    margin-bottom: 8px;
+  }
+
+  .result-class {
+    font-family: 'Fraunces', serif;
+    font-size: 30px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .result-class .chip {
+    width: 13px;
+    height: 13px;
+    border-radius: 50%;
+  }
+  .result-class .chip.c0 { background: var(--green); }
+  .result-class .chip.c1 { background: var(--rust); }
+
+  .neighbor-list {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12.5px;
+    color: #40473F;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .neighbor-list .n-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 5px 9px;
+    background: var(--paper);
+    border-radius: 2px;
+    border: 1px solid var(--grid);
+  }
+
+  .neighbor-list .n-row .n-tag {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .n-tag .chip { width: 8px; height: 8px; border-radius: 50%; }
+
+  /* ---------- Footer note ---------- */
+  .footnote {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 0 28px 44px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11.5px;
+    color: var(--sage);
+    line-height: 1.7;
+    width: 100%;
+  }
+
+  .footnote code {
+    background: var(--grid);
+    padding: 1px 5px;
+    border-radius: 2px;
+    color: var(--ink);
+  }
+</style>
+</head>
+<body>
+
+  <div class="strip">
+    <div class="strip-title"><span class="dot"></span> KNN · Height/Weight Classifier</div>
+    <div class="strip-metrics">
+      <span>k = <b>3</b></span>
+      <span>train/test split = <b>80/20</b></span>
+      <span title="6 rows total, 2 held out for testing — both from Class 0, model trained on 4 rows spanning both classes. Correct, if unforgiving, at this sample size.">test accuracy = <b id="accStrip">—</b> ⓘ</span>
+      <span>scaler = <b>standardized</b></span>
+    </div>
+  </div>
+
+  <div class="masthead">
+    <p class="eyebrow">Instance-based classification</p>
+    <h1>Drop a point in. Watch its neighbors decide.</h1>
+    <p class="sub">Six people were measured by height and weight and sorted into Class 0 or Class 1. Enter a new measurement, and the classifier finds the 3 nearest training points (after standardizing both features) and votes on a class — the same computation as the original scikit-learn pipeline, reproduced here in the browser.</p>
+  </div>
+
+  <div class="stage">
+    <div class="panel">
+      <div class="panel-label">
+        <span>Decision space</span>
+        <span id="plotStatus">6 training points</span>
+      </div>
+      <div class="plot-wrap">
+        <svg id="plot" viewBox="0 0 620 460" xmlns="http://www.w3.org/2000/svg"></svg>
+      </div>
+      <div class="legend">
+        <div class="legend-item"><span class="legend-swatch c0"></span> Class 0</div>
+        <div class="legend-item"><span class="legend-swatch c1"></span> Class 1</div>
+        <div class="legend-item"><span class="legend-swatch new-swatch"></span> Your point</div>
+      </div>
+    </div>
+
+    <div class="panel input-panel">
+      <div class="panel-label"><span>New measurement</span><span></span></div>
+      <div class="field-group">
+        <div class="field-row">
+          <label for="heightInput">Height</label>
+          <input type="number" id="heightInput" value="172" min="100" max="230" step="1">
+          <span class="unit">cm</span>
+        </div>
+        <div class="field-row">
+          <label for="weightInput">Weight</label>
+          <input type="number" id="weightInput" value="68" min="25" max="200" step="1">
+          <span class="unit">kg</span>
+        </div>
+      </div>
+      <button class="classify-btn" id="classifyBtn">
+        Classify point
+        <svg viewBox="0 0 16 16" fill="none"><path d="M2 8H14M14 8L9 3M14 8L9 13" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="error-msg" id="errorMsg">Enter a height and weight to classify.</div>
+
+      <div class="result" id="resultBlock">
+        <div class="result-label">Predicted class</div>
+        <div class="result-class" id="resultClass"><span class="chip"></span><span id="resultClassText">—</span></div>
+        <div class="result-label">3 nearest neighbors (by scaled distance)</div>
+        <div class="neighbor-list" id="neighborList"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footnote">
+    Reproduces the reference pipeline: <code>train_test_split(test_size=0.2, random_state=42)</code> →
+    <code>StandardScaler</code> fit on the training split only → <code>KNeighborsClassifier(n_neighbors=3)</code>
+    with Euclidean distance on standardized features. Same six-row dataset, same split seed, same scaling math — computed here in JavaScript instead of Python.<br><br>
+    Worth flagging: the reported test accuracy is 0%, and that's a real result, not a display bug. With only 6 rows, an 80/20 split holds out 2 for testing — here, both happen to be the shortest/lightest pair (both Class 0) — while training on the remaining 4. The model ends up predicting Class 1 for both, since the test points sit outside the range the training data covers. It's a natural consequence of evaluating on a dataset this small, and a good illustration of why train/test splits need far more than 6 rows to be meaningful.
+  </div>
+
+<script>
+(function() {
+  // ---------------------------------------------------------
+  // 1. Data — identical to the Python dict
+  // ---------------------------------------------------------
+  const rawData = [
+    { height: 160, weight: 55, cls: 0 },
+    { height: 165, weight: 60, cls: 0 },
+    { height: 170, weight: 65, cls: 0 },
+    { height: 175, weight: 70, cls: 1 },
+    { height: 180, weight: 75, cls: 1 },
+    { height: 185, weight: 80, cls: 1 },
+  ];
+
+  // ---------------------------------------------------------
+  // 2. Reproduce sklearn's train_test_split(test_size=0.2, random_state=42)
+  //    Verified directly against scikit-learn for this exact 6-row dataset:
+  //    with test_size=0.2, sklearn rounds up to 2 held-out rows, and
+  //    random_state=42 selects indices [0, 1] as the test set (both Class 0)
+  //    and [5, 2, 4, 3] as the train set (spanning both classes).
+  //    This matters: it means the reference script's accuracy_score is
+  //    genuinely 0.0 on this split — not a placeholder, a real result of
+  //    training on 4 points and testing on 2 the model happens to get wrong.
+  // ---------------------------------------------------------
+  const testIndices = [0, 1];
+  const trainIndices = [5, 2, 4, 3];
+
+  const trainSet = trainIndices.map(i => rawData[i]);
+  const testSet = testIndices.map(i => rawData[i]);
+
+  // ---------------------------------------------------------
+  // 3. StandardScaler — fit on training data only
+  // ---------------------------------------------------------
+  function mean(arr) { return arr.reduce((a, b) => a + b, 0) / arr.length; }
+  function stdDev(arr, m) {
+    const variance = arr.reduce((a, b) => a + (b - m) ** 2, 0) / arr.length; // population std, matches sklearn
+    return Math.sqrt(variance);
+  }
+
+  const trainHeights = trainSet.map(d => d.height);
+  const trainWeights = trainSet.map(d => d.weight);
+
+  const scaler = {
+    meanH: mean(trainHeights),
+    stdH: stdDev(trainHeights, mean(trainHeights)),
+    meanW: mean(trainWeights),
+    stdW: stdDev(trainWeights, mean(trainWeights)),
+  };
+
+  function scalePoint(h, w) {
+    return {
+      h: (h - scaler.meanH) / scaler.stdH,
+      w: (w - scaler.meanW) / scaler.stdW,
+    };
+  }
+
+  const trainScaled = trainSet.map(d => ({ ...scalePoint(d.height, d.weight), cls: d.cls, height: d.height, weight: d.weight }));
+  const testScaled = testSet.map(d => ({ ...scalePoint(d.height, d.weight), cls: d.cls, height: d.height, weight: d.weight }));
+
+  // ---------------------------------------------------------
+  // 4. KNN core (k = 3, Euclidean distance on scaled features)
+  // ---------------------------------------------------------
+  function knnPredict(point, k = 3) {
+    const distances = trainScaled.map(t => ({
+      ...t,
+      dist: Math.sqrt((point.h - t.h) ** 2 + (point.w - t.w) ** 2),
+    }));
+    distances.sort((a, b) => a.dist - b.dist);
+    const neighbors = distances.slice(0, k);
+    const votes = {};
+    neighbors.forEach(n => { votes[n.cls] = (votes[n.cls] || 0) + 1; });
+    const predictedClass = Object.keys(votes).reduce((a, b) => votes[a] >= votes[b] ? a : b);
+    return { predictedClass: Number(predictedClass), neighbors };
+  }
+
+  // Evaluate accuracy on the held-out test row(s)
+  let correct = 0;
+  testScaled.forEach(t => {
+    const { predictedClass } = knnPredict({ h: t.h, w: t.w }, 3);
+    if (predictedClass === t.cls) correct += 1;
+  });
+  const accuracy = correct / testScaled.length;
+  document.getElementById('accStrip').textContent = (accuracy * 100).toFixed(0) + '%';
+
+  // ---------------------------------------------------------
+  // 5. Plot rendering (SVG, hand-built scales)
+  // ---------------------------------------------------------
+  const svg = document.getElementById('plot');
+  const svgNS = "http://www.w3.org/2000/svg";
+  const W = 620, H = 460;
+  const margin = { top: 20, right: 24, bottom: 46, left: 54 };
+  const plotW = W - margin.left - margin.right;
+  const plotH = H - margin.top - margin.bottom;
+
+  const hExtent = [150, 195];
+  const wExtent = [45, 90];
+
+  function xScale(h) { return margin.left + ((h - hExtent[0]) / (hExtent[1] - hExtent[0])) * plotW; }
+  function yScale(w) { return margin.top + plotH - ((w - wExtent[0]) / (wExtent[1] - wExtent[0])) * plotH; }
+
+  function el(tag, attrs) {
+    const e = document.createElementNS(svgNS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    return e;
+  }
+
+  // gridlines + axis labels
+  for (let h = 150; h <= 195; h += 15) {
+    svg.appendChild(el('line', { class: 'grid-line', x1: xScale(h), y1: margin.top, x2: xScale(h), y2: margin.top + plotH }));
+    const t = el('text', { class: 'axis-label', x: xScale(h), y: margin.top + plotH + 22, 'text-anchor': 'middle' });
+    t.textContent = h;
+    svg.appendChild(t);
+  }
+  for (let w = 45; w <= 90; w += 15) {
+    svg.appendChild(el('line', { class: 'grid-line', x1: margin.left, y1: yScale(w), x2: margin.left + plotW, y2: yScale(w) }));
+    const t = el('text', { class: 'axis-label', x: margin.left - 12, y: yScale(w) + 4, 'text-anchor': 'end' });
+    t.textContent = w;
+    svg.appendChild(t);
+  }
+
+  const xAxisLabel = el('text', { class: 'axis-label', x: margin.left + plotW / 2, y: H - 6, 'text-anchor': 'middle' });
+  xAxisLabel.textContent = 'height (cm)';
+  svg.appendChild(xAxisLabel);
+
+  const yAxisLabel = el('text', { class: 'axis-label', x: 14, y: margin.top + plotH / 2, 'text-anchor': 'middle', transform: `rotate(-90 14 ${margin.top + plotH / 2})` });
+  yAxisLabel.textContent = 'weight (kg)';
+  svg.appendChild(yAxisLabel);
+
+  // training points (use full rawData so both train+test rows are visible on the plot)
+  const pointEls = {};
+  rawData.forEach((d, i) => {
+    const cx = xScale(d.height), cy = yScale(d.weight);
+    const c = el('circle', { class: `train-point c${d.cls}`, cx, cy, r: 7 });
+    svg.appendChild(c);
+    const lbl = el('text', { class: 'train-point-label', x: cx + 11, y: cy - 10 });
+    lbl.textContent = `${d.height},${d.weight}`;
+    svg.appendChild(lbl);
+    pointEls[`${d.height}_${d.weight}`] = { cx, cy };
+  });
+
+  // elements reused across classify() calls
+  let connectorEls = [];
+  let ringEls = [];
+  let newPointEl = null;
+
+  function clearPrevious() {
+    connectorEls.forEach(c => c.remove());
+    ringEls.forEach(r => r.remove());
+    if (newPointEl) newPointEl.remove();
+    connectorEls = [];
+    ringEls = [];
+    newPointEl = null;
+  }
+
+  // ---------------------------------------------------------
+  // 6. Classify interaction
+  // ---------------------------------------------------------
+  const heightInput = document.getElementById('heightInput');
+  const weightInput = document.getElementById('weightInput');
+  const classifyBtn = document.getElementById('classifyBtn');
+  const errorMsg = document.getElementById('errorMsg');
+  const resultBlock = document.getElementById('resultBlock');
+  const resultClassText = document.getElementById('resultClassText');
+  const resultClassChip = document.querySelector('#resultClass .chip');
+  const neighborList = document.getElementById('neighborList');
+  const plotStatus = document.getElementById('plotStatus');
+
+  function classify() {
+    const h = parseFloat(heightInput.value);
+    const w = parseFloat(weightInput.value);
+
+    if (isNaN(h) || isNaN(w) || h <= 0 || w <= 0) {
+      errorMsg.classList.add('show');
+      resultBlock.classList.remove('show');
+      return;
+    }
+    errorMsg.classList.remove('show');
+
+    clearPrevious();
+
+    const scaled = scalePoint(h, w);
+    const { predictedClass, neighbors } = knnPredict(scaled, 3);
+
+    // draw new point
+    const cx = xScale(h), cy = yScale(w);
+    newPointEl = el('circle', {
+      class: 'new-point',
+      cx, cy, r: 9,
+      fill: predictedClass === 0 ? 'var(--green)' : 'var(--rust)',
+    });
+    svg.appendChild(newPointEl);
+
+    // connectors + rings to the 3 nearest neighbors
+    neighbors.forEach((n, idx) => {
+      const target = pointEls[`${n.height}_${n.weight}`];
+      const line = el('line', {
+        class: 'connector',
+        x1: cx, y1: cy, x2: target.cx, y2: target.cy,
+      });
+      svg.appendChild(line);
+      connectorEls.push(line);
+
+      const ring = el('circle', {
+        class: 'neighbor-ring',
+        cx: target.cx, cy: target.cy, r: 12,
+        stroke: n.cls === 0 ? 'var(--green)' : 'var(--rust)',
+      });
+      svg.appendChild(ring);
+      ringEls.push(ring);
+    });
+
+    // animate: fade in point, then connectors/rings with slight stagger
+    requestAnimationFrame(() => {
+      newPointEl.style.transition = 'opacity 0.3s ease';
+      newPointEl.style.opacity = '1';
+      connectorEls.forEach((c, i) => {
+        setTimeout(() => {
+          c.style.transition = 'opacity 0.3s ease';
+          c.style.opacity = '0.55';
+        }, 120 + i * 90);
+      });
+      ringEls.forEach((r, i) => {
+        setTimeout(() => {
+          r.style.transition = 'opacity 0.3s ease';
+          r.style.opacity = '1';
+        }, 160 + i * 90);
+      });
+    });
+
+    // update result panel
+    resultClassText.textContent = `Class ${predictedClass}`;
+    resultClassChip.className = `chip c${predictedClass}`;
+
+    neighborList.innerHTML = '';
+    neighbors.forEach(n => {
+      const row = document.createElement('div');
+      row.className = 'n-row';
+      row.innerHTML = `
+        <span class="n-tag"><span class="chip c${n.cls}"></span>${n.height}cm, ${n.weight}kg</span>
+        <span>d = ${n.dist.toFixed(3)}</span>
+      `;
+      neighborList.appendChild(row);
+    });
+
+    resultBlock.classList.add('show');
+    plotStatus.textContent = `6 training points · 1 new`;
+  }
+
+  classifyBtn.addEventListener('click', classify);
+  [heightInput, weightInput].forEach(inp => {
+    inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') classify(); });
+  });
+
+  // run once on load with the default values (172, 68) to match the Python script's example
+  classify();
+})();
+</script>
+</body>
+</html>

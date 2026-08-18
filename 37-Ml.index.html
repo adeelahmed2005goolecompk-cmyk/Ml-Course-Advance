@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KNN Classification · Front‑end</title>
+  <!-- Font Awesome for icons (optional but adds flavor) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      background: linear-gradient(145deg, #f6f9fc 0%, #e9f0f5 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 2rem 1rem;
+    }
+
+    .card {
+      max-width: 1100px;
+      width: 100%;
+      background: rgba(255, 255, 255, 0.75);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border-radius: 3rem;
+      box-shadow: 0 30px 50px rgba(0, 20, 30, 0.15), 0 8px 20px rgba(0, 0, 0, 0.05);
+      padding: 2.5rem 2.8rem;
+      transition: all 0.2s ease;
+      border: 1px solid rgba(255, 255, 255, 0.5);
+    }
+
+    @media (max-width: 640px) {
+      .card {
+        padding: 1.8rem 1.2rem;
+        border-radius: 2rem;
+      }
+    }
+
+    /* header */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-bottom: 2.5rem;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+      padding-bottom: 1.25rem;
+    }
+
+    .header h1 {
+      font-size: 2.2rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      background: linear-gradient(135deg, #1a2e3f, #2c4a62);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+    }
+
+    .header h1 i {
+      -webkit-text-fill-color: #2c6e9c;
+      background: none;
+      font-size: 2rem;
+    }
+
+    .badge {
+      background: #d4e2ed;
+      padding: 0.45rem 1.2rem;
+      border-radius: 40px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: #1f3b4f;
+      box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+      letter-spacing: 0.2px;
+      border: 1px solid rgba(255,255,255,0.6);
+    }
+
+    .badge i {
+      margin-right: 6px;
+      color: #2a5f7a;
+    }
+
+    /* two column layout */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1.1fr;
+      gap: 2.2rem;
+      margin-top: 0.8rem;
+    }
+
+    @media (max-width: 780px) {
+      .grid-2 {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+      }
+    }
+
+    /* data section */
+    .data-section {
+      background: #ffffffcc;
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      border-radius: 2rem;
+      padding: 1.6rem 1.6rem 1.8rem;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.7);
+    }
+
+    .section-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #1d3a4e;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 1.2rem;
+      letter-spacing: -0.2px;
+    }
+
+    .section-title i {
+      color: #2b6f94;
+      font-size: 1.2rem;
+      width: 1.8rem;
+    }
+
+    .dict-box, .df-box {
+      background: #f1f6fa;
+      border-radius: 1.2rem;
+      padding: 0.8rem 1rem;
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+      font-size: 0.85rem;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+      border: 1px solid #dde8f0;
+      color: #1a2f3e;
+      margin-bottom: 1rem;
+      line-height: 1.5;
+    }
+
+    .df-box {
+      background: #eef4f9;
+    }
+
+    .dict-label, .df-label {
+      font-family: 'Inter', sans-serif;
+      font-weight: 500;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      color: #3b5e78;
+      margin-bottom: 0.3rem;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .dict-label i, .df-label i {
+      font-size: 0.7rem;
+      opacity: 0.7;
+    }
+
+    .mini-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+      margin: 0.5rem 0 0.2rem;
+    }
+
+    .mini-table th {
+      text-align: left;
+      padding: 0.5rem 0.3rem 0.3rem 0;
+      font-weight: 600;
+      color: #1f4057;
+      border-bottom: 1px solid #c8d9e6;
+    }
+
+    .mini-table td {
+      padding: 0.3rem 0.3rem 0.3rem 0;
+      border-bottom: 1px dashed #d9e3ed;
+    }
+
+    .mini-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .class-badge {
+      display: inline-block;
+      background: #b8d1e2;
+      padding: 0.1rem 0.8rem;
+      border-radius: 30px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: #12303f;
+    }
+
+    .class-badge.class1 {
+      background: #b8d1e2;
+    }
+    .class-badge.class0 {
+      background: #c9dde9;
+    }
+
+    /* training / metrics */
+    .train-metrics {
+      margin-top: 1.5rem;
+      background: #e3eef7;
+      border-radius: 1.5rem;
+      padding: 1.2rem 1.5rem;
+      border: 1px solid #d0e0ec;
+    }
+
+    .metric-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.8rem;
+    }
+
+    .metric-item {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.95rem;
+      background: #ffffffb3;
+      padding: 0.3rem 1rem 0.3rem 0.9rem;
+      border-radius: 40px;
+      backdrop-filter: blur(2px);
+      border: 1px solid #fff;
+    }
+
+    .metric-item i {
+      color: #1b5779;
+    }
+
+    .metric-value {
+      font-weight: 700;
+      color: #0a293d;
+      background: #ffffff;
+      padding: 0.1rem 0.9rem;
+      border-radius: 30px;
+      margin-left: 4px;
+    }
+
+    .code-snip {
+      background: #0b202b;
+      color: #d4e9f5;
+      padding: 0.4rem 1rem;
+      border-radius: 40px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      letter-spacing: 0.2px;
+    }
+
+    /* prediction card */
+    .prediction-box {
+      background: #dce9f3;
+      border-radius: 2rem;
+      padding: 1.5rem 1.8rem;
+      margin-top: 1.6rem;
+      border: 1px solid #bdd3e3;
+      box-shadow: inset 0 1px 4px rgba(255,255,255,0.7);
+    }
+
+    .prediction-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .new-data-input {
+      background: #eef6fd;
+      padding: 0.6rem 1.2rem;
+      border-radius: 60px;
+      font-weight: 500;
+      color: #103141;
+      border: 1px solid #c2d9ea;
+      font-size: 0.9rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .new-data-input i {
+      color: #1a6182;
+    }
+
+    .result-pill {
+      background: #0f2f41;
+      padding: 0.5rem 1.8rem;
+      border-radius: 60px;
+      color: white;
+      font-weight: 600;
+      font-size: 1rem;
+      letter-spacing: 0.3px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 4px 8px rgba(0,20,30,0.2);
+      border: 1px solid #3e789b;
+    }
+
+    .result-pill i {
+      color: #b4d9f0;
+    }
+
+    .class-label {
+      background: #284d64;
+      padding: 0.1rem 1.2rem;
+      border-radius: 30px;
+      font-size: 0.8rem;
+      font-weight: 500;
+    }
+
+    .footer-note {
+      margin-top: 2rem;
+      text-align: right;
+      font-size: 0.8rem;
+      color: #3e6079;
+      opacity: 0.7;
+      border-top: 1px solid rgba(0,0,0,0.03);
+      padding-top: 1rem;
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+    }
+
+    .footer-note i {
+      margin-right: 4px;
+    }
+
+    hr {
+      border: none;
+      border-top: 1px solid #d3e2ee;
+      margin: 1.2rem 0 0.6rem;
+    }
+
+    .small-badge {
+      background: #c2d9e9;
+      border-radius: 20px;
+      padding: 0.1rem 0.8rem;
+      font-size: 0.7rem;
+      font-weight: 500;
+      color: #1d3e54;
+    }
+
+    .flex {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    /* icons */
+    .icon-muted {
+      opacity: 0.6;
+    }
+  </style>
+</head>
+<body>
+<div class="card">
+
+  <!-- header -->
+  <div class="header">
+    <h1>
+      <i class="fas fa-robot"></i> 
+      KNN · classification
+    </h1>
+    <span class="badge"><i class="fas fa-code"></i> sklearn · python</span>
+  </div>
+
+  <!-- main grid -->
+  <div class="grid-2">
+
+    <!-- left column: data & training -->
+    <div>
+      <!-- dictionary display -->
+      <div class="data-section">
+        <div class="section-title">
+          <i class="fas fa-database"></i> 
+          Dictionary data
+        </div>
+        <div class="dict-label"><i class="fas fa-braces"></i> raw data</div>
+        <div class="dict-box">
+          {
+            "Height": [160, 165, 170, 175, 180, 185],
+            "Weight": [55, 60, 65, 70, 75, 80],
+            "Class":  [0, 0, 0, 1, 1, 1]
+          }
+        </div>
+
+        <div class="df-label" style="margin-top: 0.8rem;"><i class="fas fa-table"></i> pandas DataFrame</div>
+        <div class="df-box">
+          <table class="mini-table">
+            <thead><tr><th>Height</th><th>Weight</th><th>Class</th></tr></thead>
+            <tbody>
+              <tr><td>160</td><td>55</td><td><span class="class-badge class0">0</span></td></tr>
+              <tr><td>165</td><td>60</td><td><span class="class-badge class0">0</span></td></tr>
+              <tr><td>170</td><td>65</td><td><span class="class-badge class0">0</span></td></tr>
+              <tr><td>175</td><td>70</td><td><span class="class-badge class1">1</span></td></tr>
+              <tr><td>180</td><td>75</td><td><span class="class-badge class1">1</span></td></tr>
+              <tr><td>185</td><td>80</td><td><span class="class-badge class1">1</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- train/test split & scaling summary -->
+        <div style="margin-top: 1.5rem; background: #dce7f1; border-radius: 1.2rem; padding: 0.5rem 1rem; display: flex; flex-wrap: wrap; gap: 0.8rem; align-items: center;">
+          <span style="font-size:0.85rem; font-weight:500; color:#1d3e55;"><i class="fas fa-arrows-split"></i> train/test split</span>
+          <span class="small-badge"><i class="far fa-circle"></i> test size 0.2</span>
+          <span class="small-badge"><i class="fas fa-random"></i> random_state 42</span>
+          <span class="small-badge"><i class="fas fa-scale-balanced"></i> StandardScaler</span>
+        </div>
+      </div>
+
+      <!-- training metrics -->
+      <div class="train-metrics">
+        <div class="metric-row">
+          <div class="metric-item"><i class="fas fa-cogs"></i> KNN <span style="font-weight:600; margin-left:4px;">n=3</span></div>
+          <div class="metric-item"><i class="fas fa-check-circle" style="color:#1a7a5e;"></i> Accuracy <span class="metric-value">1.0</span></div>
+          <div class="code-snip"><i class="fas fa-terminal"></i> fit / predict</div>
+        </div>
+        <div style="margin-top: 0.8rem; font-size:0.85rem; color:#1d3f58; background:#eaf2f9; padding:0.3rem 1rem; border-radius:40px; display:inline-block;">
+          <i class="fas fa-chart-simple"></i> y_pred = [1]  (test set)
+        </div>
+      </div>
+    </div>
+
+    <!-- right column: prediction & new data -->
+    <div>
+      <div class="data-section" style="height:100%; display:flex; flex-direction:column;">
+        <div class="section-title">
+          <i class="fas fa-bullseye"></i> 
+          Prediction on new data
+        </div>
+
+        <div style="background:#eff6fd; border-radius:1.5rem; padding:1.2rem 1.4rem; flex:1;">
+          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 1rem;">
+            <span style="background:#d3e3f0; padding:0.2rem 1rem; border-radius:40px; font-weight:500; font-size:0.9rem;">
+              <i class="fas fa-user"></i> new person
+            </span>
+            <span class="new-data-input">
+              <i class="fas fa-ruler-vertical"></i> 172 cm 
+              <i class="fas fa-weight-scale" style="margin-left:8px;"></i> 68 kg
+            </span>
+          </div>
+
+          <!-- scaling + prediction pipeline visual -->
+          <div style="background:#e1eef9; border-radius:1.2rem; padding:0.8rem 1.2rem; margin-bottom: 1.5rem; display:flex; flex-wrap:wrap; gap:0.5rem; align-items:center;">
+            <span style="font-size:0.8rem; background:#b7d0e2; padding:0.1rem 0.9rem; border-radius:30px;"><i class="fas fa-arrow-right"></i> scaler.transform</span>
+            <span style="font-size:0.8rem; background:#b7d0e2; padding:0.1rem 0.9rem; border-radius:30px;"><i class="fas fa-arrow-right"></i> knn.predict</span>
+            <span style="font-size:0.8rem; background:#b7d0e2; padding:0.1rem 0.9rem; border-radius:30px;"><i class="fas fa-flag-checkered"></i> class</span>
+          </div>
+
+          <!-- result -->
+          <div class="prediction-box">
+            <div class="prediction-row">
+              <div style="display:flex; align-items:center; gap:6px;">
+                <i class="fas fa-arrow-right" style="color:#1e5a7a;"></i>
+                <span style="font-weight:500; color:#163d54;">Predicted class</span>
+              </div>
+              <div class="result-pill">
+                <i class="fas fa-tag"></i>  1 
+                <span class="class-label">Class 1</span>
+              </div>
+            </div>
+            <div style="margin-top: 0.8rem; display: flex; gap: 1.2rem; flex-wrap: wrap; font-size:0.85rem;">
+              <span><i class="fas fa-circle-check" style="color:#16734e;"></i> model confidence: high</span>
+              <span><i class="fas fa-people-group"></i> neighbors: 3</span>
+            </div>
+          </div>
+
+          <!-- small note: original code output -->
+          <div style="margin-top: 1.2rem; background: #dae8f3; border-radius: 2rem; padding: 0.4rem 1.2rem; display: inline-block; font-size:0.8rem; color:#133141;">
+            <i class="fas fa-print"></i>  Predicted Class: 1  ·  Class 1
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- footer: code reference & info -->
+  <div class="footer-note">
+    <span><i class="fas fa-flask"></i> KNeighborsClassifier · 3 neighbors · Euclidean</span>
+    <span><i class="far fa-file-code"></i> 37‑ML_classification_KNN.py</span>
+  </div>
+</div>
+</body>
+</html>
