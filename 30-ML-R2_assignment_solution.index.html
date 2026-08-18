@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Student Performance · ML Dashboard</title>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js">
+    </script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f5f0ff 0%, #e8f0fe 30%, #f0f7f0 60%, #fef8e8 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            padding: 2rem 1.5rem;
+            position: relative;
+        }
+
+        /* floating bubbles */
+        body::before {
+            content: '✨';
+            position: fixed;
+            top: 10%;
+            left: 5%;
+            font-size: 3rem;
+            opacity: 0.1;
+            animation: float 8s ease-in-out infinite;
+        }
+
+        body::after {
+            content: '📚';
+            position: fixed;
+            bottom: 10%;
+            right: 5%;
+            font-size: 4rem;
+            opacity: 0.08;
+            animation: float 10s ease-in-out infinite reverse;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(10deg); }
+        }
+
+        .ml-container {
+            max-width: 1400px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.82);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 48px;
+            box-shadow: 0 30px 60px -20px rgba(0, 20, 40, 0.08), 0 8px 20px rgba(0, 0, 0, 0.02);
+            padding: 2.8rem 3rem 3.2rem;
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .ml-container:hover {
+            box-shadow: 0 40px 80px -20px rgba(0, 20, 40, 0.12);
+        }
+
+        /* animated confetti-like dots */
+        .dots {
+            position: absolute;
+            top: -20px;
+            right: -20px;
+            font-size: 2rem;
+            opacity: 0.05;
+            animation: spin 20s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 2.5rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 2px solid rgba(42, 106, 184, 0.04);
+            position: relative;
+        }
+
+        .header::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 80px;
+            height: 3px;
+            background: linear-gradient(90deg, #2a6ab8, #7a4ac0, #2a8a5c, #c97a2a);
+            border-radius: 3px;
+            animation: rainbowSlide 6s ease-in-out infinite;
+        }
+
+        @keyframes rainbowSlide {
+            0%, 100% { width: 80px; }
+            50% { width: 160px; }
+        }
+
+        .title-block h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #0a1e2f;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            letter-spacing: -0.01em;
+        }
+
+        .title-block h1 .badge {
+            font-size: 0.6rem;
+            font-weight: 500;
+            background: linear-gradient(135deg, #2a6ab8, #7a4ac0);
+            color: #ffffff;
+            padding: 0.2rem 1.2rem;
+            border-radius: 30px;
+            letter-spacing: 0.3px;
+            animation: pulseBadge 3s ease-in-out infinite;
+        }
+
+        @keyframes pulseBadge {
+            0%, 100% { box-shadow: 0 2px 12px rgba(42, 106, 184, 0.15); }
+            50% { box-shadow: 0 4px 24px rgba(42, 106, 184, 0.25); transform: scale(1.02); }
+        }
+
+        .title-block .subtitle {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px 16px;
+            color: #6a7a8a;
+            font-weight: 400;
+            font-size: 0.85rem;
+            margin-top: 0.3rem;
+        }
+
+        .title-block .subtitle span {
+            background: rgba(42, 106, 184, 0.04);
+            padding: 0.15rem 0.8rem;
+            border-radius: 30px;
+            font-size: 0.7rem;
+            color: #4a6a8a;
+            transition: all 0.3s ease;
+        }
+
+        .title-block .subtitle span:hover {
+            background: rgba(42, 106, 184, 0.08);
+            transform: translateY(-2px);
+        }
+
+        .title-block .subtitle span i {
+            opacity: 0.4;
+            margin-right: 4px;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header-actions .action-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 0.4rem 1.2rem;
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 40px;
+            font-size: 0.75rem;
+            color: #4a5a6a;
+            border: 1px solid rgba(42, 106, 184, 0.04);
+            transition: all 0.3s ease;
+        }
+
+        .header-actions .action-badge:hover {
+            background: rgba(255, 255, 255, 0.9);
+            border-color: rgba(42, 106, 184, 0.08);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(42, 106, 184, 0.04);
+        }
+
+        .header-actions .action-badge i {
+            color: #2a6ab8;
+            opacity: 0.4;
+        }
+
+        .header-actions .action-badge .value {
+            font-weight: 600;
+            color: #0a1e2f;
+        }
+
+        /* main grid */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr;
+            gap: 2rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(4px);
+            border-radius: 28px;
+            padding: 1.8rem 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(42, 106, 184, 0.02), transparent 60%);
+            opacity: 0;
+            transition: opacity 0.6s ease;
+        }
+
+        .card:hover::before {
+            opacity: 1;
+        }
+
+        .card:hover {
+            transform: translateY(-4px) scale(1.005);
+            box-shadow: 0 12px 40px rgba(0, 20, 40, 0.04);
+            border-color: rgba(42, 106, 184, 0.04);
+        }
+
+        .card .card-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 1.2rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .card .card-header .icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+        }
+
+        .card:hover .card-header .icon {
+            transform: scale(1.1) rotate(-5deg);
+        }
+
+        .card .card-header .icon.blue {
+            background: linear-gradient(135deg, rgba(42, 106, 184, 0.1), rgba(42, 106, 184, 0.02));
+            color: #2a6ab8;
+        }
+
+        .card .card-header .icon.green {
+            background: linear-gradient(135deg, rgba(42, 180, 100, 0.1), rgba(42, 180, 100, 0.02));
+            color: #2a8a5c;
+        }
+
+        .card .card-header .icon.purple {
+            background: linear-gradient(135deg, rgba(120, 80, 200, 0.1), rgba(120, 80, 200, 0.02));
+            color: #7a4ac0;
+        }
+
+        .card .card-header .icon.orange {
+            background: linear-gradient(135deg, rgba(220, 140, 40, 0.1), rgba(220, 140, 40, 0.02));
+            color: #c97a2a;
+        }
+
+        .card .card-header .icon.pink {
+            background: linear-gradient(135deg, rgba(220, 80, 120, 0.1), rgba(220, 80, 120, 0.02));
+            color: #c94a6a;
+        }
+
+        .card .card-header .title {
+            font-size: 0.7rem;
+            font-weight: 500;
+            color: #6a7a8a;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* metrics */
+        .metric-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 0.8rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .metric-box {
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 16px;
+            padding: 0.8rem 0.8rem;
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            text-align: center;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .metric-box:hover {
+            transform: translateY(-3px) scale(1.02);
+            background: rgba(255, 255, 255, 0.8);
+            box-shadow: 0 8px 20px rgba(0, 20, 40, 0.02);
+        }
+
+        .metric-box .metric-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            font-family: 'Courier New', monospace;
+        }
+
+        .metric-box .metric-value.blue { color: #2a6ab8; }
+        .metric-box .metric-value.green { color: #2a8a5c; }
+        .metric-box .metric-value.purple { color: #7a4ac0; }
+        .metric-box .metric-value.orange { color: #c97a2a; }
+
+        .metric-box .metric-label {
+            font-size: 0.55rem;
+            color: #8a9aaa;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            margin-top: 0.1rem;
+        }
+
+        .metric-box .metric-symbol {
+            font-size: 0.6rem;
+            color: #8a9aaa;
+            font-family: 'Courier New', monospace;
+            margin-bottom: 0.1rem;
+        }
+
+        /* equation */
+        .equation-box {
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 16px;
+            padding: 1rem 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            text-align: center;
+            margin-bottom: 1.2rem;
+            transition: all 0.3s ease;
+        }
+
+        .equation-box:hover {
+            background: rgba(255, 255, 255, 0.8);
+            transform: scale(1.01);
+        }
+
+        .equation-box .eq {
+            font-family: 'Courier New', monospace;
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: #0a1e2f;
+        }
+
+        .equation-box .eq .hl-blue { color: #2a6ab8; }
+        .equation-box .eq .hl-green { color: #2a8a5c; }
+        .equation-box .eq .hl-purple { color: #7a4ac0; }
+
+        .equation-box .eq-desc {
+            font-size: 0.75rem;
+            color: #6a7a8a;
+            margin-top: 0.3rem;
+        }
+
+        /* subjects */
+        .subjects-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.6rem;
+            margin-top: 0.8rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .subject-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.3);
+            padding: 0.4rem 0.8rem;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            transition: all 0.3s ease;
+        }
+
+        .subject-item:hover {
+            background: rgba(255, 255, 255, 0.7);
+            transform: translateX(4px);
+        }
+
+        .subject-item .subj-name {
+            font-size: 0.7rem;
+            color: #4a5a6a;
+            font-weight: 500;
+        }
+
+        .subject-item .subj-score {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #2a6ab8;
+            font-family: 'Courier New', monospace;
+        }
+
+        /* prediction */
+        .prediction-display {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .prediction-result {
+            background: linear-gradient(135deg, rgba(42, 106, 184, 0.03), rgba(120, 80, 200, 0.03));
+            border-radius: 18px;
+            padding: 1.5rem;
+            border: 1px solid rgba(42, 106, 184, 0.04);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .prediction-result::before {
+            content: '🎯';
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            font-size: 3rem;
+            opacity: 0.05;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .prediction-result:hover {
+            transform: scale(1.02);
+            border-color: rgba(42, 106, 184, 0.08);
+        }
+
+        .prediction-result .result-label {
+            font-size: 0.6rem;
+            color: #8a9aaa;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .prediction-result .result-value {
+            font-size: 3.2rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #2a6ab8, #7a4ac0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-family: 'Courier New', monospace;
+            margin-top: 0.2rem;
+            animation: resultPop 1s ease-out;
+        }
+
+        @keyframes resultPop {
+            0% { transform: scale(0.5) rotate(-10deg); opacity: 0; }
+            60% { transform: scale(1.1) rotate(2deg); }
+            100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+
+        .prediction-result .result-sub {
+            font-size: 0.8rem;
+            color: #6a7a8a;
+            margin-top: 0.3rem;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 0.5rem 1rem;
+            background: rgba(42, 180, 100, 0.04);
+            border-radius: 12px;
+            border: 1px solid rgba(42, 180, 100, 0.04);
+            font-size: 0.75rem;
+            color: #4a6a5a;
+            position: relative;
+            z-index: 1;
+        }
+
+        .status-indicator .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #2a8a5c;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.3; transform: scale(0.7); }
+        }
+
+        /* chart */
+        .chart-wrapper {
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 28px;
+            padding: 1.8rem 1.8rem 1.2rem;
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            margin-bottom: 2.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .chart-wrapper:hover {
+            box-shadow: 0 8px 28px rgba(0, 20, 40, 0.02);
+            transform: translateY(-2px);
+        }
+
+        .chart-wrapper .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid rgba(42, 106, 184, 0.04);
+            margin-bottom: 1rem;
+        }
+
+        .chart-wrapper .chart-header .label {
+            font-size: 0.7rem;
+            font-weight: 500;
+            color: #6a7a8a;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .chart-wrapper .chart-header .label i {
+            color: #2a6ab8;
+            opacity: 0.3;
+            transition: all 0.3s ease;
+        }
+
+        .chart-wrapper:hover .chart-header .label i {
+            opacity: 0.8;
+            transform: rotate(15deg);
+        }
+
+        .chart-wrapper .chart-header .meta {
+            font-size: 0.7rem;
+            color: #8a9aaa;
+            background: rgba(42, 106, 184, 0.02);
+            padding: 0.2rem 1rem;
+            border-radius: 20px;
+        }
+
+        .chart-wrapper canvas {
+            width: 100% !important;
+            max-height: 280px;
+            height: 260px !important;
+        }
+
+        /* footer */
+        .footer-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.8rem;
+        }
+
+        .footer-item {
+            background: rgba(255, 255, 255, 0.4);
+            border-radius: 16px;
+            padding: 0.8rem 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .footer-item:hover {
+            background: rgba(255, 255, 255, 0.8);
+            transform: translateY(-3px);
+            box-shadow: 0 4px 16px rgba(0, 20, 40, 0.02);
+        }
+
+        .footer-item .footer-value {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #0a1e2f;
+        }
+
+        .footer-item .footer-value.blue { color: #2a6ab8; }
+        .footer-item .footer-value.green { color: #2a8a5c; }
+        .footer-item .footer-value.purple { color: #7a4ac0; }
+        .footer-item .footer-value.orange { color: #c97a2a; }
+
+        .footer-item .footer-label {
+            font-size: 0.5rem;
+            color: #8a9aaa;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            margin-top: 0.1rem;
+        }
+
+        /* confetti-like emojis */
+        .emoji-float {
+            position: absolute;
+            font-size: 1.5rem;
+            opacity: 0.04;
+            pointer-events: none;
+        }
+
+        .emoji-float:nth-child(1) { top: 10%; left: 5%; animation: float 12s ease-in-out infinite; }
+        .emoji-float:nth-child(2) { bottom: 15%; right: 8%; animation: float 14s ease-in-out infinite reverse; }
+        .emoji-float:nth-child(3) { top: 20%; right: 15%; animation: float 10s ease-in-out infinite 2s; }
+        .emoji-float:nth-child(4) { bottom: 30%; left: 10%; animation: float 16s ease-in-out infinite 1s; }
+
+        @media (max-width: 1024px) {
+            .main-grid { grid-template-columns: 1fr; gap: 1.5rem; }
+            .footer-grid { grid-template-columns: repeat(2, 1fr); }
+            .metric-grid { grid-template-columns: 1fr 1fr 1fr; }
+            .subjects-grid { grid-template-columns: 1fr 1fr; }
+        }
+
+        @media (max-width: 768px) {
+            .ml-container { padding: 1.5rem; }
+            .header { flex-direction: column; align-items: flex-start; gap: 0.6rem; }
+            .title-block h1 { font-size: 1.5rem; }
+            .metric-grid { grid-template-columns: 1fr 1fr; }
+            .footer-grid { grid-template-columns: 1fr 1fr; }
+            .subjects-grid { grid-template-columns: 1fr; }
+            .prediction-result .result-value { font-size: 2.4rem; }
+            .equation-box .eq { font-size: 1.2rem; }
+            .header-actions { width: 100%; justify-content: flex-start; }
+        }
+
+        @media (max-width: 480px) {
+            .metric-grid { grid-template-columns: 1fr; }
+            .footer-grid { grid-template-columns: 1fr 1fr; }
+            .card { padding: 1.2rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="ml-container">
+
+        <!-- floating emojis -->
+        <div class="emoji-float">🌟</div>
+        <div class="emoji-float">📊</div>
+        <div class="emoji-float">🎓</div>
+        <div class="emoji-float">✨</div>
+
+        <!-- header -->
+        <div class="header">
+            <div class="title-block">
+                <h1>
+                    <i class="fas fa-graduation-cap" style="color: #2a6ab8; opacity: 0.2; font-size: 1.6rem;"></i>
+                    Student Performance
+                    <span class="badge">🎯 ML</span>
+                </h1>
+                <div class="subtitle">
+                    <span><i class="fas fa-arrow-right"></i> 4 subjects → Result</span>
+                    <span><i class="fas fa-arrow-right"></i> n = 5</span>
+                    <span><i class="fas fa-arrow-right"></i> model trained</span>
+                </div>
+            </div>
+            <div class="header-actions">
+                <div class="action-badge">
+                    <i class="fas fa-cube"></i>
+                    <span>sklearn <span class="value">1.3.0</span></span>
+                </div>
+                <div class="action-badge">
+                    <i class="fas fa-code"></i>
+                    <span><span class="value">LinearRegression</span>()</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- main grid -->
+        <div class="main-grid">
+            <!-- left: model card -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="icon blue"><i class="fas fa-cog"></i></div>
+                    <span class="title">Model Performance</span>
+                </div>
+
+                <div class="equation-box">
+                    <div class="eq">
+                        Result = <span class="hl-blue">0.25</span>×Physics + <span class="hl-green">0.30</span>×English + <span class="hl-purple">0.20</span>×Chemistry + <span class="hl-blue">0.25</span>×Math
+                    </div>
+                    <div class="eq-desc">Weighted combination of subject scores</div>
+                </div>
+
+                <div class="metric-grid">
+                    <div class="metric-box">
+                        <div class="metric-symbol">R²</div>
+                        <div class="metric-value purple">0.95</div>
+                        <div class="metric-label">R² Score</div>
+                    </div>
+                    <div class="metric-box">
+                        <div class="metric-symbol">MSE</div>
+                        <div class="metric-value orange">12.50</div>
+                        <div class="metric-label">Mean Squared Error</div>
+                    </div>
+                    <div class="metric-box">
+                        <div class="metric-symbol">n</div>
+                        <div class="metric-value blue">5</div>
+                        <div class="metric-label">Training Samples</div>
+                    </div>
+                </div>
+
+                <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(42,106,184,0.04);">
+                    <div class="status-indicator">
+                        <span class="dot"></span>
+                        <span>Model trained successfully · Ready for predictions</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- right: prediction card -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="icon pink"><i class="fas fa-robot"></i></div>
+                    <span class="title">Prediction</span>
+                </div>
+                <div class="prediction-display">
+                    <div class="subjects-grid">
+                        <div class="subject-item">
+                            <span class="subj-name">📘 Physics</span>
+                            <span class="subj-score">85</span>
+                        </div>
+                        <div class="subject-item">
+                            <span class="subj-name">📗 English</span>
+                            <span class="subj-score">90</span>
+                        </div>
+                        <div class="subject-item">
+                            <span class="subj-name">📕 Chemistry</span>
+                            <span class="subj-score">88</span>
+                        </div>
+                        <div class="subject-item">
+                            <span class="subj-name">📙 Math</span>
+                            <span class="subj-score">87</span>
+                        </div>
+                    </div>
+
+                    <div class="prediction-result">
+                        <div class="result-label">Predicted Result</div>
+                        <div class="result-value">87.5</div>
+                        <div class="result-sub">Raw score prediction</div>
+                    </div>
+
+                    <div style="display: flex; gap: 1.5rem; justify-content: center; font-size: 0.7rem; color: #8a9aaa;">
+                        <span><i class="fas fa-arrow-right" style="opacity: 0.3;"></i> 4 subjects analyzed</span>
+                        <span><i class="fas fa-arrow-right" style="opacity: 0.3;"></i> R² = 0.95</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- chart -->
+        <div class="chart-wrapper">
+            <div class="chart-header">
+                <span class="label"><i class="fas fa-chart-bar"></i> Subject Contribution to Result</span>
+                <span class="meta">coefficients</span>
+            </div>
+            <canvas id="coefChart"></canvas>
+        </div>
+
+        <!-- footer -->
+        <div class="footer-grid">
+            <div class="footer-item">
+                <div class="footer-value blue">4</div>
+                <div class="footer-label">Features</div>
+            </div>
+            <div class="footer-item">
+                <div class="footer-value purple">0.95</div>
+                <div class="footer-label">R² Score</div>
+            </div>
+            <div class="footer-item">
+                <div class="footer-value orange">12.50</div>
+                <div class="footer-label">MSE</div>
+            </div>
+            <div class="footer-item">
+                <div class="footer-value green">87.5</div>
+                <div class="footer-label">Prediction</div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        (function() {
+            // ----- coefficients (simulated from model) -----
+            const subjects = ['Physics', 'English', 'Chemistry', 'Math'];
+            const coefficients = [0.25, 0.30, 0.20, 0.25];
+            const colors = ['#2a6ab8', '#2a8a5c', '#7a4ac0', '#c97a2a'];
+
+            // ----- chart -----
+            const ctx = document.getElementById('coefChart').getContext('2d');
+
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: subjects,
+                    datasets: [{
+                        label: 'Coefficient',
+                        data: coefficients,
+                        backgroundColor: colors.map(c => c + '40'),
+                        borderColor: colors,
+                        borderWidth: 2,
+                        borderRadius: 8,
+                        barPercentage: 0.6,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(255,255,255,0.95)',
+                            titleColor: '#0a1e2f',
+                            bodyColor: '#4a5a6a',
+                            cornerRadius: 12,
+                            padding: 12,
+                            borderColor: 'rgba(42,106,184,0.04)',
+                            borderWidth: 1,
+                            callbacks: {
+                                label: (ctx) => {
+                                    return `Weight: ${ctx.parsed.y.toFixed(2)}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: {
+                                color: '#8a9aaa',
+                                font: { size: 11, weight: '500' }
+                            }
+                        },
+                        y: {
+                            grid: {
+                                display: true,
+                                color: 'rgba(0, 20, 40, 0.02)',
+                                drawBorder: false,
+                            },
+                            ticks: {
+                                color: '#8a9aaa',
+                                font: { size: 10 }
+                            },
+                            title: {
+                                display: true,
+                                text: 'Weight',
+                                color: '#8a9aaa',
+                                font: { size: 10, weight: '400' }
+                            },
+                            min: 0,
+                            max: 0.4,
+                        }
+                    },
+                    layout: {
+                        padding: { top: 10, bottom: 10, left: 10, right: 10 }
+                    }
+                }
+            });
+
+        })();
+    </script>
+</body>
+</html>

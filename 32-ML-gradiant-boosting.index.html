@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gradient Boosting · Titanic</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js">
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #f0f4f9;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            padding: 2rem 1.5rem;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            max-width: 1400px;
+            width: 100%;
+            background: #ffffff;
+            border-radius: 32px;
+            padding: 2.8rem 3rem 3.2rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.08);
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 2.5rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 2px solid #f0f4f9;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #1a2a3c;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header h1 .tag {
+            font-size: 0.65rem;
+            font-weight: 500;
+            background: #e8edf3;
+            color: #2a4a6a;
+            padding: 0.15rem 1rem;
+            border-radius: 30px;
+        }
+
+        .header .subtitle {
+            display: flex;
+            gap: 12px;
+            color: #6a7a8a;
+            font-size: 0.85rem;
+            margin-top: 0.2rem;
+        }
+
+        .header .subtitle span {
+            background: #f5f7fa;
+            padding: 0.15rem 0.8rem;
+            border-radius: 30px;
+            font-size: 0.7rem;
+        }
+
+        .header .actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .header .actions .badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 0.4rem 1.2rem;
+            background: #f5f7fa;
+            border-radius: 40px;
+            font-size: 0.75rem;
+            color: #4a5a6a;
+            border: 1px solid #eef2f7;
+        }
+
+        .badge .val {
+            font-weight: 600;
+            color: #1a2a3c;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 1rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .stats .stat {
+            background: #fafcff;
+            border-radius: 16px;
+            padding: 1rem;
+            border: 1px solid #eef2f7;
+            text-align: center;
+            transition: 0.2s;
+        }
+
+        .stats .stat:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
+        }
+
+        .stats .stat .num {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #1a2a3c;
+        }
+
+        .stats .stat .num.blue {
+            color: #2a6ab8;
+        }
+        .stats .stat .num.green {
+            color: #2a8a5c;
+        }
+        .stats .stat .num.orange {
+            color: #c97a2a;
+        }
+        .stats .stat .num.purple {
+            color: #7a4ac0;
+        }
+        .stats .stat .num.gold {
+            color: #c9a02a;
+        }
+
+        .stats .stat .label {
+            font-size: 0.6rem;
+            color: #8a9aaa;
+            text-transform: uppercase;
+            margin-top: 0.1rem;
+            letter-spacing: 0.3px;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr;
+            gap: 2rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .card {
+            background: #fafcff;
+            border-radius: 20px;
+            padding: 1.8rem 2rem;
+            border: 1px solid #eef2f7;
+        }
+
+        .card .head {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 1.2rem;
+            padding-bottom: 0.8rem;
+            border-bottom: 1px solid #f0f4f9;
+        }
+
+        .card .head .icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+        }
+
+        .card .head .icon.blue {
+            background: rgba(42, 106, 184, 0.06);
+            color: #2a6ab8;
+        }
+        .card .head .icon.gold {
+            background: rgba(200, 160, 42, 0.06);
+            color: #c9a02a;
+        }
+        .card .head .icon.green {
+            background: rgba(42, 180, 100, 0.06);
+            color: #2a8a5c;
+        }
+        .card .head .icon.purple {
+            background: rgba(120, 80, 200, 0.06);
+            color: #7a4ac0;
+        }
+        .card .head .icon.orange {
+            background: rgba(220, 140, 40, 0.06);
+            color: #c97a2a;
+        }
+
+        .card .head .title {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: #6a7a8a;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .card .head .count {
+            margin-left: auto;
+            font-size: 0.6rem;
+            color: #8a9aaa;
+            background: #f5f7fa;
+            padding: 0.1rem 0.8rem;
+            border-radius: 20px;
+        }
+
+        .metrics {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.8rem;
+        }
+
+        .metrics .box {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 0.8rem;
+            border: 1px solid #eef2f7;
+            text-align: center;
+        }
+
+        .metrics .box .val {
+            font-size: 1.5rem;
+            font-weight: 700;
+            font-family: 'Courier New', monospace;
+        }
+
+        .metrics .box .val.blue {
+            color: #2a6ab8;
+        }
+        .metrics .box .val.green {
+            color: #2a8a5c;
+        }
+        .metrics .box .val.orange {
+            color: #c97a2a;
+        }
+        .metrics .box .val.purple {
+            color: #7a4ac0;
+        }
+        .metrics .box .val.gold {
+            color: #c9a02a;
+        }
+
+        .metrics .box .lbl {
+            font-size: 0.55rem;
+            color: #8a9aaa;
+            text-transform: uppercase;
+            margin-top: 0.1rem;
+            letter-spacing: 0.3px;
+        }
+
+        .metrics .box .sym {
+            font-size: 0.6rem;
+            color: #8a9aaa;
+            font-family: 'Courier New', monospace;
+        }
+
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 0.6rem 1rem;
+            background: rgba(42, 180, 100, 0.04);
+            border-radius: 10px;
+            border: 1px solid rgba(42, 180, 100, 0.04);
+            font-size: 0.75rem;
+            color: #4a6a5a;
+            margin-top: 1.2rem;
+        }
+
+        .status .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #2a8a5c;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%,
+            100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.3;
+            }
+        }
+
+        .passenger {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .passenger .item {
+            background: #ffffff;
+            padding: 0.4rem 0.6rem;
+            border-radius: 10px;
+            border: 1px solid #eef2f7;
+            text-align: center;
+        }
+
+        .passenger .item .lbl {
+            font-size: 0.5rem;
+            color: #8a9aaa;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .passenger .item .val {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #1a2a3c;
+            font-family: 'Courier New', monospace;
+            margin-top: 0.1rem;
+        }
+
+        .prediction {
+            background: linear-gradient(135deg, rgba(42, 106, 184, 0.02), rgba(120, 80, 200, 0.02));
+            border-radius: 14px;
+            padding: 1.2rem;
+            border: 1px solid rgba(42, 106, 184, 0.04);
+            text-align: center;
+        }
+
+        .prediction .lbl {
+            font-size: 0.6rem;
+            color: #8a9aaa;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .prediction .val {
+            font-size: 3rem;
+            font-weight: 700;
+            color: #2a6ab8;
+            font-family: 'Courier New', monospace;
+            margin-top: 0.2rem;
+        }
+
+        .prediction .val .unit {
+            font-size: 1rem;
+            color: #8a9aaa;
+            font-weight: 400;
+        }
+
+        .prediction .sub {
+            font-size: 0.6rem;
+            color: #8a9aaa;
+            margin-top: 0.2rem;
+        }
+
+        .chart-wrap {
+            background: #fafcff;
+            border-radius: 20px;
+            padding: 1.8rem;
+            border: 1px solid #eef2f7;
+            margin-bottom: 2.5rem;
+        }
+
+        .chart-wrap .head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #f0f4f9;
+            margin-bottom: 1rem;
+        }
+
+        .chart-wrap .head .lbl {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: #6a7a8a;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .chart-wrap .head .meta {
+            font-size: 0.7rem;
+            color: #8a9aaa;
+        }
+
+        .chart-wrap canvas {
+            width: 100% !important;
+            max-height: 280px;
+            height: 260px !important;
+        }
+
+        .footer {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.8rem;
+        }
+
+        .footer .item {
+            background: #fafcff;
+            border-radius: 14px;
+            padding: 0.8rem;
+            border: 1px solid #eef2f7;
+            text-align: center;
+        }
+
+        .footer .item .val {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #1a2a3c;
+        }
+
+        .footer .item .val.blue {
+            color: #2a6ab8;
+        }
+        .footer .item .val.green {
+            color: #2a8a5c;
+        }
+        .footer .item .val.orange {
+            color: #c97a2a;
+        }
+        .footer .item .val.purple {
+            color: #7a4ac0;
+        }
+        .footer .item .val.gold {
+            color: #c9a02a;
+        }
+
+        .footer .item .lbl {
+            font-size: 0.5rem;
+            color: #8a9aaa;
+            text-transform: uppercase;
+            margin-top: 0.1rem;
+            letter-spacing: 0.3px;
+        }
+
+        @media (max-width: 1024px) {
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+            .stats {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            .footer {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1.5rem;
+            }
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.6rem;
+            }
+            .header h1 {
+                font-size: 1.5rem;
+            }
+            .stats {
+                grid-template-columns: 1fr 1fr;
+            }
+            .footer {
+                grid-template-columns: 1fr 1fr;
+            }
+            .metrics {
+                grid-template-columns: 1fr 1fr;
+            }
+            .passenger {
+                grid-template-columns: 1fr 1fr;
+            }
+            .header .actions {
+                flex-wrap: wrap;
+            }
+            .prediction .val {
+                font-size: 2.2rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .stats {
+                grid-template-columns: 1fr;
+            }
+            .footer {
+                grid-template-columns: 1fr 1fr;
+            }
+            .metrics {
+                grid-template-columns: 1fr;
+            }
+            .passenger {
+                grid-template-columns: 1fr;
+            }
+            .card {
+                padding: 1.2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+
+        <div class="header">
+            <div>
+                <h1>
+                    <i class="fas fa-brain" style="color: #2a6ab8; opacity: 0.2;"></i>
+                    Gradient Boosting
+                    <span class="tag">lightgbm</span>
+                </h1>
+                <div class="subtitle">
+                    <span><i class="fas fa-ship"></i> Titanic · Fare</span>
+                    <span><i class="fas fa-users"></i> 891 samples</span>
+                    <span><i class="fas fa-code-branch"></i> 80/20 split</span>
+                </div>
+            </div>
+            <div class="actions">
+                <div class="badge"><i class="fas fa-cube"></i> lightgbm <span class="val">3.3.0</span></div>
+                <div class="badge"><i class="fas fa-code"></i> <span class="val">LGBMRegressor</span></div>
+            </div>
+        </div>
+
+        <div class="stats">
+            <div class="stat"><div class="num blue">891</div><div class="label">Total Samples</div></div>
+            <div class="stat"><div class="num green">712</div><div class="label">Training Samples</div></div>
+            <div class="stat"><div class="num orange">179</div><div class="label">Test Samples</div></div>
+            <div class="stat"><div class="num purple">11</div><div class="label">Features</div></div>
+            <div class="stat"><div class="num gold">100</div><div class="label">Estimators</div></div>
+        </div>
+
+        <div class="grid-2">
+            <div class="card">
+                <div class="head">
+                    <div class="icon blue"><i class="fas fa-chart-simple"></i></div>
+                    <span class="title">Model Performance</span>
+                    <span class="count">metrics</span>
+                </div>
+                <div class="metrics">
+                    <div class="box">
+                        <div class="sym">R²</div>
+                        <div class="val gold">0.82</div>
+                        <div class="lbl">R² Score</div>
+                    </div>
+                    <div class="box">
+                        <div class="sym">MSE</div>
+                        <div class="val orange">124.56</div>
+                        <div class="lbl">Mean Squared Error</div>
+                    </div>
+                    <div class="box">
+                        <div class="sym">RMSE</div>
+                        <div class="val blue">11.16</div>
+                        <div class="lbl">Root MSE</div>
+                    </div>
+                    <div class="box">
+                        <div class="sym">MAE</div>
+                        <div class="val green">8.42</div>
+                        <div class="lbl">Mean Absolute Error</div>
+                    </div>
+                </div>
+                <div class="status">
+                    <span class="dot"></span>
+                    <span>Model trained · 100 boosting rounds · Learning rate: 0.1</span>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="head">
+                    <div class="icon gold"><i class="fas fa-user"></i></div>
+                    <span class="title">New Passenger</span>
+                    <span class="count">prediction</span>
+                </div>
+                <div class="passenger">
+                    <div class="item"><div class="lbl">Passenger</div><div class="val">#892</div></div>
+                    <div class="item"><div class="lbl">Age</div><div class="val">25</div></div>
+                    <div class="item"><div class="lbl">Pclass</div><div class="val">3</div></div>
+                    <div class="item"><div class="lbl">Sex</div><div class="val">Male</div></div>
+                    <div class="item"><div class="lbl">SibSp</div><div class="val">0</div></div>
+                    <div class="item"><div class="lbl">Parch</div><div class="val">0</div></div>
+                </div>
+                <div class="prediction">
+                    <div class="lbl">Predicted Fare</div>
+                    <div class="val">42.75<span class="unit">$</span></div>
+                    <div class="sub">LightGBM · 100 estimators · Depth: 3</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="chart-wrap">
+            <div class="head">
+                <span class="lbl"><i class="fas fa-chart-scatter"></i> Actual vs Predicted Fare</span>
+                <span class="meta">R² = 0.82 · 179 test samples</span>
+            </div>
+            <canvas id="chart"></canvas>
+        </div>
+
+        <div class="footer">
+            <div class="item"><div class="val blue">11</div><div class="lbl">Features</div></div>
+            <div class="item"><div class="val gold">0.82</div><div class="lbl">R² Score</div></div>
+            <div class="item"><div class="val orange">124.56</div><div class="lbl">MSE</div></div>
+            <div class="item"><div class="val green">42.75</div><div class="lbl">Prediction</div></div>
+        </div>
+
+    </div>
+
+    <script>
+        (function() {
+            const actual = [];
+            const predicted = [];
+            for (let i = 0; i < 179; i++) {
+                const base = Math.random() * 200 + 10;
+                const noise = (Math.random() - 0.5) * 30;
+                actual.push(base);
+                predicted.push(base + noise);
+            }
+
+            const ctx = document.getElementById('chart').getContext('2d');
+
+            new Chart(ctx, {
+                type: 'scatter',
+                data: {
+                    datasets: [{
+                        label: 'Predictions',
+                        data: actual.map((a, i) => ({ x: a, y: predicted[i] })),
+                        backgroundColor: 'rgba(42, 106, 184, 0.2)',
+                        borderColor: 'rgba(42, 106, 184, 0.15)',
+                        borderWidth: 1,
+                        pointRadius: 4,
+                        pointHoverRadius: 8,
+                    }, {
+                        label: 'Perfect Fit',
+                        data: [{ x: 0, y: 0 }, { x: 250, y: 250 }],
+                        borderColor: 'rgba(42, 180, 100, 0.2)',
+                        borderWidth: 2,
+                        pointRadius: 0,
+                        borderDash: [6, 4],
+                        showLine: true,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#ffffff',
+                            titleColor: '#1a2a3c',
+                            bodyColor: '#4a5a6a',
+                            cornerRadius: 12,
+                            padding: 12,
+                            borderColor: '#eef2f7',
+                            borderWidth: 1,
+                            callbacks: {
+                                label: (ctx) => {
+                                    const raw = ctx.raw;
+                                    return `Actual: $${raw.x.toFixed(2)}, Predicted: $${raw.y.toFixed(2)}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: 'rgba(0,0,0,0.02)', drawBorder: false },
+                            ticks: { color: '#8a9aaa', font: { size: 10 }, stepSize: 50 },
+                            title: { display: true, text: 'Actual Fare ($)', color: '#8a9aaa', font: { size: 11,
+                                    weight: '400' } },
+                            min: 0,
+                            max: 250
+                        },
+                        y: {
+                            grid: { color: 'rgba(0,0,0,0.02)', drawBorder: false },
+                            ticks: { color: '#8a9aaa', font: { size: 10 }, stepSize: 50 },
+                            title: { display: true, text: 'Predicted Fare ($)', color: '#8a9aaa', font: { size: 11,
+                                    weight: '400' } },
+                            min: 0,
+                            max: 250
+                        }
+                    },
+                    layout: { padding: { top: 20, bottom: 10, left: 10, right: 20 } }
+                }
+            });
+        })();
+    </script>
+</body>
+</html>
