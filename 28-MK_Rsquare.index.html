@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Linear Regression · Analytics</title>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js">
+    </script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #f0f4f9;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            padding: 2rem 1.5rem;
+        }
+
+        .ml-container {
+            max-width: 1400px;
+            width: 100%;
+            background: #ffffff;
+            border-radius: 32px;
+            box-shadow: 0 25px 50px -12px rgba(0, 20, 40, 0.08), 0 4px 12px rgba(0, 0, 0, 0.02);
+            padding: 2.8rem 3rem 3.2rem;
+            border: 1px solid rgba(0, 20, 40, 0.02);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .ml-container::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 40%;
+            height: 40%;
+            background: radial-gradient(ellipse, rgba(42, 106, 184, 0.02) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .ml-container::after {
+            content: '';
+            position: absolute;
+            bottom: -50%;
+            left: -20%;
+            width: 40%;
+            height: 40%;
+            background: radial-gradient(ellipse, rgba(120, 80, 200, 0.015) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        /* header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 2.5rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid #eef2f7;
+            position: relative;
+            z-index: 1;
+        }
+
+        .title-block h1 {
+            font-size: 1.8rem;
+            font-weight: 600;
+            color: #0a1e2f;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            letter-spacing: -0.01em;
+        }
+
+        .title-block h1 .badge {
+            font-size: 0.6rem;
+            font-weight: 500;
+            background: linear-gradient(135deg, #e8edf3, #dce3ec);
+            color: #2a4a6a;
+            padding: 0.15rem 1rem;
+            border-radius: 30px;
+            letter-spacing: 0.3px;
+        }
+
+        .title-block .subtitle {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px 16px;
+            color: #6a7a8a;
+            font-weight: 400;
+            font-size: 0.85rem;
+            margin-top: 0.2rem;
+        }
+
+        .title-block .subtitle span {
+            background: #f5f7fa;
+            padding: 0.15rem 0.8rem;
+            border-radius: 30px;
+            font-size: 0.7rem;
+            color: #6a7a8a;
+        }
+
+        .title-block .subtitle span i {
+            opacity: 0.4;
+            margin-right: 4px;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header-actions .action-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 0.4rem 1.2rem;
+            background: #f5f7fa;
+            border-radius: 40px;
+            font-size: 0.75rem;
+            color: #4a5a6a;
+            border: 1px solid #eef2f7;
+        }
+
+        .header-actions .action-badge i {
+            color: #2a6ab8;
+            opacity: 0.4;
+        }
+
+        .header-actions .action-badge .value {
+            font-weight: 600;
+            color: #0a1e2f;
+        }
+
+        /* main grid */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr;
+            gap: 2rem;
+            margin-bottom: 2.5rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .card {
+            background: #fafcff;
+            border-radius: 20px;
+            padding: 1.8rem 2rem;
+            border: 1px solid #eef2f7;
+            transition: box-shadow 0.3s, transform 0.2s;
+            position: relative;
+        }
+
+        .card:hover {
+            box-shadow: 0 8px 24px rgba(0, 20, 40, 0.04);
+            transform: translateY(-2px);
+        }
+
+        .card .card-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 1.2rem;
+        }
+
+        .card .card-header .icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+        }
+
+        .card .card-header .icon.blue {
+            background: rgba(42, 106, 184, 0.06);
+            color: #2a6ab8;
+        }
+
+        .card .card-header .icon.green {
+            background: rgba(42, 180, 100, 0.06);
+            color: #2a8a5c;
+        }
+
+        .card .card-header .icon.purple {
+            background: rgba(120, 80, 200, 0.06);
+            color: #7a4ac0;
+        }
+
+        .card .card-header .icon.orange {
+            background: rgba(220, 140, 40, 0.06);
+            color: #c97a2a;
+        }
+
+        .card .card-header .title {
+            font-size: 0.7rem;
+            font-weight: 500;
+            color: #6a7a8a;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* model parameters */
+        .param-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.8rem;
+        }
+
+        .param-box {
+            background: #ffffff;
+            border-radius: 14px;
+            padding: 0.8rem 0.8rem;
+            border: 1px solid #eef2f7;
+            text-align: center;
+            transition: background 0.2s;
+        }
+
+        .param-box:hover {
+            background: #f8fafc;
+        }
+
+        .param-box .param-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #0a1e2f;
+            font-family: 'Courier New', monospace;
+        }
+
+        .param-box .param-value.blue {
+            color: #2a6ab8;
+        }
+
+        .param-box .param-value.green {
+            color: #2a8a5c;
+        }
+
+        .param-box .param-value.orange {
+            color: #c97a2a;
+        }
+
+        .param-box .param-value.purple {
+            color: #7a4ac0;
+        }
+
+        .param-box .param-label {
+            font-size: 0.55rem;
+            color: #8a9aaa;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            margin-top: 0.1rem;
+        }
+
+        .param-box .param-symbol {
+            font-size: 0.65rem;
+            color: #8a9aaa;
+            font-family: 'Courier New', monospace;
+            margin-bottom: 0.1rem;
+        }
+
+        /* equation display */
+        .equation-display {
+            background: #ffffff;
+            border-radius: 14px;
+            padding: 1rem 1.5rem;
+            border: 1px solid #eef2f7;
+            text-align: center;
+            margin-bottom: 1.2rem;
+            position: relative;
+        }
+
+        .equation-display::after {
+            content: '';
+            position: absolute;
+            bottom: -6px;
+            left: 20%;
+            right: 20%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, rgba(42, 106, 184, 0.06), transparent);
+        }
+
+        .equation-display .eq {
+            font-family: 'Courier New', monospace;
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #0a1e2f;
+        }
+
+        .equation-display .eq .highlight-blue {
+            color: #2a6ab8;
+        }
+
+        .equation-display .eq .highlight-green {
+            color: #2a8a5c;
+        }
+
+        .equation-display .eq-desc {
+            font-size: 0.75rem;
+            color: #6a7a8a;
+            margin-top: 0.3rem;
+        }
+
+        /* prediction card */
+        .prediction-display {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .prediction-input-row {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            background: #ffffff;
+            padding: 0.8rem 1.2rem;
+            border-radius: 14px;
+            border: 1px solid #eef2f7;
+        }
+
+        .prediction-input-row .input-label {
+            font-size: 0.8rem;
+            color: #6a7a8a;
+            font-weight: 500;
+        }
+
+        .prediction-input-row .input-value {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #0a1e2f;
+            font-family: 'Courier New', monospace;
+            margin-left: auto;
+            background: #f5f7fa;
+            padding: 0.15rem 1rem;
+            border-radius: 8px;
+        }
+
+        .prediction-result-box {
+            background: linear-gradient(135deg, rgba(42, 106, 184, 0.02), rgba(42, 106, 184, 0.04));
+            border-radius: 14px;
+            padding: 1.2rem 1.5rem;
+            border: 1px solid rgba(42, 106, 184, 0.04);
+            text-align: center;
+            position: relative;
+        }
+
+        .prediction-result-box::before {
+            content: '';
+            position: absolute;
+            top: -1px;
+            left: 30%;
+            right: 30%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(42, 106, 184, 0.08), transparent);
+        }
+
+        .prediction-result-box .result-label {
+            font-size: 0.6rem;
+            color: #8a9aaa;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .prediction-result-box .result-value {
+            font-size: 2.8rem;
+            font-weight: 700;
+            color: #2a6ab8;
+            font-family: 'Courier New', monospace;
+            margin-top: 0.2rem;
+        }
+
+        .prediction-result-box .result-value .unit {
+            font-size: 1rem;
+            color: #8a9aaa;
+            font-weight: 400;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 0.5rem 1rem;
+            background: rgba(42, 180, 100, 0.04);
+            border-radius: 10px;
+            border: 1px solid rgba(42, 180, 100, 0.04);
+            font-size: 0.75rem;
+            color: #4a6a5a;
+        }
+
+        .status-indicator .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #2a8a5c;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        /* chart */
+        .chart-wrapper {
+            background: #fafcff;
+            border-radius: 20px;
+            padding: 1.8rem 1.8rem 1.2rem;
+            border: 1px solid #eef2f7;
+            margin-bottom: 2.5rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .chart-wrapper .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #eef2f7;
+            margin-bottom: 1rem;
+        }
+
+        .chart-wrapper .chart-header .label {
+            font-size: 0.7rem;
+            font-weight: 500;
+            color: #6a7a8a;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .chart-wrapper .chart-header .label i {
+            color: #2a6ab8;
+            opacity: 0.3;
+        }
+
+        .chart-wrapper .chart-header .meta {
+            font-size: 0.7rem;
+            color: #8a9aaa;
+        }
+
+        .chart-wrapper canvas {
+            width: 100% !important;
+            max-height: 280px;
+            height: 260px !important;
+        }
+
+        /* data section */
+        .data-section {
+            display: grid;
+            grid-template-columns: 1fr 1.5fr;
+            gap: 1.5rem;
+            margin-bottom: 2.5rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .data-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 0.5rem;
+        }
+
+        .data-cell {
+            background: #fafcff;
+            border-radius: 10px;
+            padding: 0.5rem 0.6rem;
+            border: 1px solid #eef2f7;
+            text-align: center;
+            transition: background 0.2s;
+        }
+
+        .data-cell:hover {
+            background: #f5f7fa;
+        }
+
+        .data-cell .label-sm {
+            font-size: 0.55rem;
+            color: #8a9aaa;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .data-cell .value {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #0a1e2f;
+            font-family: 'Courier New', monospace;
+        }
+
+        .data-cell .value.blue {
+            color: #2a6ab8;
+        }
+
+        .data-cell .value.green {
+            color: #2a8a5c;
+        }
+
+        .info-card {
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            background: #fafcff;
+            border-radius: 16px;
+            padding: 1rem 1.5rem;
+            border: 1px solid #eef2f7;
+        }
+
+        .info-card .info-item {
+            text-align: center;
+        }
+
+        .info-card .info-item .info-label {
+            font-size: 0.55rem;
+            color: #8a9aaa;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .info-card .info-item .info-value {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #0a1e2f;
+            margin-top: 0.1rem;
+        }
+
+        .info-card .info-item .info-value.orange {
+            color: #c97a2a;
+        }
+
+        .info-card .info-item .info-value.purple {
+            color: #7a4ac0;
+        }
+
+        .info-card .divider {
+            width: 1px;
+            height: 40px;
+            background: #eef2f7;
+        }
+
+        /* footer */
+        .footer-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.8rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .footer-item {
+            background: #fafcff;
+            border-radius: 14px;
+            padding: 0.8rem 1rem;
+            border: 1px solid #eef2f7;
+            text-align: center;
+            transition: background 0.2s;
+        }
+
+        .footer-item:hover {
+            background: #f5f7fa;
+        }
+
+        .footer-item .footer-value {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #0a1e2f;
+        }
+
+        .footer-item .footer-value.blue {
+            color: #2a6ab8;
+        }
+
+        .footer-item .footer-value.green {
+            color: #2a8a5c;
+        }
+
+        .footer-item .footer-value.orange {
+            color: #c97a2a;
+        }
+
+        .footer-item .footer-value.purple {
+            color: #7a4ac0;
+        }
+
+        .footer-item .footer-label {
+            font-size: 0.5rem;
+            color: #8a9aaa;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            margin-top: 0.1rem;
+        }
+
+        @media (max-width: 1024px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+            .data-section {
+                grid-template-columns: 1fr;
+            }
+            .data-grid {
+                grid-template-columns: repeat(5, 1fr);
+            }
+            .footer-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .param-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .ml-container {
+                padding: 1.5rem;
+            }
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.6rem;
+            }
+            .title-block h1 {
+                font-size: 1.5rem;
+                flex-wrap: wrap;
+            }
+            .equation-display .eq {
+                font-size: 1.4rem;
+            }
+            .data-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            .footer-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+            .prediction-result-box .result-value {
+                font-size: 2.2rem;
+            }
+            .param-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+            .info-card {
+                flex-wrap: wrap;
+                gap: 0.5rem;
+                padding: 0.8rem;
+            }
+            .info-card .divider {
+                display: none;
+            }
+            .header-actions {
+                width: 100%;
+                justify-content: flex-start;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .data-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            .footer-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+            .param-grid {
+                grid-template-columns: 1fr;
+            }
+            .card {
+                padding: 1.2rem 1.2rem;
+            }
+            .prediction-input-row {
+                flex-wrap: wrap;
+            }
+            .prediction-input-row .input-value {
+                margin-left: 0;
+                width: 100%;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="ml-container">
+
+        <!-- header -->
+        <div class="header">
+            <div class="title-block">
+                <h1>
+                    <i class="fas fa-chart-simple" style="color: #2a6ab8; opacity: 0.2; font-size: 1.6rem;"></i>
+                    Linear Regression
+                    <span class="badge">metrics</span>
+                </h1>
+                <div class="subtitle">
+                    <span><i class="fas fa-arrow-right"></i> Hours → Marks</span>
+                    <span><i class="fas fa-arrow-right"></i> 5 samples</span>
+                    <span><i class="fas fa-arrow-right"></i> model trained</span>
+                </div>
+            </div>
+            <div class="header-actions">
+                <div class="action-badge">
+                    <i class="fas fa-cube"></i>
+                    <span>sklearn <span class="value">1.3.0</span></span>
+                </div>
+                <div class="action-badge">
+                    <i class="fas fa-code"></i>
+                    <span><span class="value">LinearRegression</span>()</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- main grid -->
+        <div class="main-grid">
+            <!-- model parameters card -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="icon blue"><i class="fas fa-cog"></i></div>
+                    <span class="title">Model Parameters</span>
+                </div>
+
+                <div class="equation-display">
+                    <div class="eq">
+                        y = <span class="highlight-blue">10</span>x + <span class="highlight-green">30</span>
+                    </div>
+                    <div class="eq-desc">Marks = 10 × Hours + 30</div>
+                </div>
+
+                <div class="param-grid">
+                    <div class="param-box">
+                        <div class="param-symbol">β₀</div>
+                        <div class="param-value green">30.0</div>
+                        <div class="param-label">Intercept</div>
+                    </div>
+                    <div class="param-box">
+                        <div class="param-symbol">β₁</div>
+                        <div class="param-value blue">10.0</div>
+                        <div class="param-label">Coefficient</div>
+                    </div>
+                    <div class="param-box">
+                        <div class="param-symbol">MSE</div>
+                        <div class="param-value orange">0.00</div>
+                        <div class="param-label">Mean Squared Error</div>
+                    </div>
+                    <div class="param-box">
+                        <div class="param-symbol">R²</div>
+                        <div class="param-value purple">1.00</div>
+                        <div class="param-label">R² Score</div>
+                    </div>
+                </div>
+
+                <div style="margin-top: 1.2rem; padding-top: 1.2rem; border-top: 1px solid #eef2f7;">
+                    <div class="status-indicator">
+                        <span class="dot"></span>
+                        <span>Model trained successfully · 5 samples</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- prediction card -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="icon purple"><i class="fas fa-robot"></i></div>
+                    <span class="title">Prediction</span>
+                </div>
+                <div class="prediction-display">
+                    <div class="prediction-input-row">
+                        <span class="input-label"><i class="fas fa-clock" style="opacity: 0.3;"></i> Hours Studied</span>
+                        <span class="input-value">3.5</span>
+                    </div>
+                    <div class="prediction-result-box">
+                        <div class="result-label">Predicted Marks</div>
+                        <div class="result-value">
+                            65.0<span class="unit">%</span>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 1.5rem; justify-content: center; font-size: 0.7rem; color: #8a9aaa;">
+                        <span><i class="fas fa-arrow-right" style="opacity: 0.3;"></i> Training: 5 samples</span>
+                        <span><i class="fas fa-arrow-right" style="opacity: 0.3;"></i> Input: 3.5 hours</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- chart -->
+        <div class="chart-wrapper">
+            <div class="chart-header">
+                <span class="label"><i class="fas fa-chart-scatter"></i> Training Data & Regression Line</span>
+                <span class="meta">mse = 0.00 · r² = 1.00</span>
+            </div>
+            <canvas id="regressionChart"></canvas>
+        </div>
+
+        <!-- data section -->
+        <div class="data-section">
+            <div class="card" style="padding: 1.2rem 1.5rem;">
+                <div class="card-header" style="margin-bottom: 0.8rem;">
+                    <div class="icon blue" style="width: 28px; height: 28px; font-size: 0.8rem;"><i class="fas fa-table"></i></div>
+                    <span class="title" style="font-size: 0.6rem;">Training Data</span>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+                    <div>
+                        <div style="font-size: 0.55rem; color: #8a9aaa; text-align: center; margin-bottom: 0.3rem; text-transform: uppercase;">Hours (X)</div>
+                        <div class="data-grid" style="grid-template-columns: repeat(5, 1fr);">
+                            <div class="data-cell"><div class="value blue">1</div></div>
+                            <div class="data-cell"><div class="value blue">2</div></div>
+                            <div class="data-cell"><div class="value blue">3</div></div>
+                            <div class="data-cell"><div class="value blue">4</div></div>
+                            <div class="data-cell"><div class="value blue">5</div></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.55rem; color: #8a9aaa; text-align: center; margin-bottom: 0.3rem; text-transform: uppercase;">Marks (y)</div>
+                        <div class="data-grid" style="grid-template-columns: repeat(5, 1fr);">
+                            <div class="data-cell"><div class="value green">40</div></div>
+                            <div class="data-cell"><div class="value green">50</div></div>
+                            <div class="data-cell"><div class="value green">60</div></div>
+                            <div class="data-cell"><div class="value green">70</div></div>
+                            <div class="data-cell"><div class="value green">80</div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="info-card">
+                <div class="info-item">
+                    <div class="info-label">Model Type</div>
+                    <div class="info-value">Linear</div>
+                </div>
+                <div class="divider"></div>
+                <div class="info-item">
+                    <div class="info-label">Framework</div>
+                    <div class="info-value" style="color: #2a6ab8;">scikit-learn</div>
+                </div>
+                <div class="divider"></div>
+                <div class="info-item">
+                    <div class="info-label">MSE</div>
+                    <div class="info-value orange">0.00</div>
+                </div>
+                <div class="divider"></div>
+                <div class="info-item">
+                    <div class="info-label">R²</div>
+                    <div class="info-value purple">1.00</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- footer -->
+        <div class="footer-grid">
+            <div class="footer-item">
+                <div class="footer-value">5</div>
+                <div class="footer-label">Training Samples</div>
+            </div>
+            <div class="footer-item">
+                <div class="footer-value blue">10.0</div>
+                <div class="footer-label">Coefficient</div>
+            </div>
+            <div class="footer-item">
+                <div class="footer-value green">30.0</div>
+                <div class="footer-label">Intercept</div>
+            </div>
+            <div class="footer-item">
+                <div class="footer-value purple">1.00</div>
+                <div class="footer-label">R² Score</div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        (function() {
+            const X = [1, 2, 3, 4, 5];
+            const y = [40, 50, 60, 70, 80];
+            const slope = 10;
+            const intercept = 30;
+
+            const ctx = document.getElementById('regressionChart').getContext('2d');
+
+            const regressionPlugin = {
+                id: 'regressionLine',
+                afterDraw: function(chart) {
+                    const ctx = chart.ctx;
+                    const xScale = chart.scales.x;
+                    const yScale = chart.scales.y;
+
+                    if (!xScale || !yScale) return;
+
+                    const minX = 0;
+                    const maxX = 6;
+                    const p1x = xScale.getPixelForValue(minX);
+                    const p1y = yScale.getPixelForValue(slope * minX + intercept);
+                    const p2x = xScale.getPixelForValue(maxX);
+                    const p2y = yScale.getPixelForValue(slope * maxX + intercept);
+
+                    ctx.save();
+
+                    ctx.shadowColor = 'rgba(42, 106, 184, 0.06)';
+                    ctx.shadowBlur = 12;
+
+                    ctx.beginPath();
+                    ctx.moveTo(p1x, p1y);
+                    ctx.lineTo(p2x, p2y);
+                    ctx.strokeStyle = 'rgba(42, 106, 184, 0.25)';
+                    ctx.lineWidth = 2.5;
+                    ctx.setLineDash([]);
+                    ctx.stroke();
+
+                    ctx.restore();
+
+                    // Label
+                    ctx.save();
+                    ctx.fillStyle = 'rgba(10, 30, 47, 0.08)';
+                    ctx.font = '10px Inter, sans-serif';
+                    ctx.textAlign = 'left';
+                    const labelX = p2x - 110;
+                    const labelY = p2y - 12;
+                    ctx.fillText(`y = ${slope}x + ${intercept}`, labelX, labelY);
+                    ctx.restore();
+                }
+            };
+
+            new Chart(ctx, {
+                type: 'scatter',
+                data: {
+                    datasets: [{
+                        label: 'Training Data',
+                        data: X.map((xi, i) => ({ x: xi, y: y[i] })),
+                        backgroundColor: 'rgba(42, 106, 184, 0.15)',
+                        borderColor: 'rgba(42, 106, 184, 0.2)',
+                        borderWidth: 1.5,
+                        pointRadius: 7,
+                        pointHoverRadius: 10,
+                        pointBorderWidth: 0,
+                    }, {
+                        label: 'Prediction',
+                        data: [{ x: 3.5, y: 65 }],
+                        backgroundColor: 'rgba(42, 180, 100, 0.2)',
+                        borderColor: 'rgba(42, 180, 100, 0.4)',
+                        borderWidth: 2,
+                        pointRadius: 9,
+                        pointHoverRadius: 12,
+                        pointBorderWidth: 0,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#ffffff',
+                            titleColor: '#0a1e2f',
+                            bodyColor: '#4a5a6a',
+                            cornerRadius: 12,
+                            padding: 12,
+                            borderColor: '#eef2f7',
+                            borderWidth: 1,
+                            callbacks: {
+                                label: (ctx) => {
+                                    const label = ctx.dataset.label || '';
+                                    const raw = ctx.raw;
+                                    return `${label}: (${raw.x}, ${raw.y})`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                display: true,
+                                color: 'rgba(0, 20, 40, 0.02)',
+                                drawBorder: false,
+                            },
+                            ticks: {
+                                color: '#8a9aaa',
+                                font: { size: 11 },
+                                stepSize: 1,
+                            },
+                            title: {
+                                display: true,
+                                text: 'Hours Studied',
+                                color: '#8a9aaa',
+                                font: { size: 11, weight: '400' }
+                            },
+                            min: 0,
+                            max: 6,
+                        },
+                        y: {
+                            grid: {
+                                display: true,
+                                color: 'rgba(0, 20, 40, 0.02)',
+                                drawBorder: false,
+                            },
+                            ticks: {
+                                color: '#8a9aaa',
+                                font: { size: 11 },
+                                stepSize: 20,
+                            },
+                            title: {
+                                display: true,
+                                text: 'Marks (%)',
+                                color: '#8a9aaa',
+                                font: { size: 11, weight: '400' }
+                            },
+                            min: 20,
+                            max: 90,
+                        }
+                    },
+                    layout: {
+                        padding: { top: 25, bottom: 10, left: 10, right: 25 }
+                    }
+                },
+                plugins: [regressionPlugin]
+            });
+
+        })();
+    </script>
+</body>
+</html>
